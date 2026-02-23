@@ -21,7 +21,8 @@ async function handleSubmit() {
         password: password.value,
       })
       if (error) throw error
-      alert('Verifique seu e-mail para confirmar o cadastro!')
+      alert('Conta criada com sucesso!')
+      router.push('/')
     } else {
       const { error } = await supabase.auth.signInWithPassword({
         email: email.value,
@@ -32,6 +33,26 @@ async function handleSubmit() {
     }
   } catch (err: any) {
     errorMsg.value = err.message || 'Ocorreu um erro'
+  } finally {
+    loading.value = false
+  }
+}
+
+async function handleResetPassword() {
+  if (!email.value) {
+    errorMsg.value = 'Por favor, informe seu e-mail acima para recuperar a senha.'
+    return
+  }
+  loading.value = true
+  errorMsg.value = ''
+  try {
+    const { error } = await supabase.auth.resetPasswordForEmail(email.value, {
+      redirectTo: window.location.origin + '/reset-password',
+    })
+    if (error) throw error
+    alert('As instruções para redefinir sua senha foram enviadas para o seu e-mail!')
+  } catch (err: any) {
+    errorMsg.value = err.message || 'Erro ao solicitar redefinição'
   } finally {
     loading.value = false
   }
@@ -87,6 +108,12 @@ async function handleSubmit() {
       <div class="mt-6 text-center text-sm text-gray-600">
         <button @click="isSignUp = !isSignUp" class="text-primary-600 font-semibold hover:underline">
           {{ isSignUp ? 'Já tem uma conta? Entrar' : 'Não tem conta? Cadastre-se' }}
+        </button>
+      </div>
+
+      <div v-if="!isSignUp" class="mt-4 text-center text-sm text-gray-600">
+        <button @click="handleResetPassword" class="text-gray-500 font-medium hover:text-gray-900 transition-colors hover:underline">
+          Esqueci minha senha
         </button>
       </div>
       
