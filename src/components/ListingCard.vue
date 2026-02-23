@@ -1,0 +1,63 @@
+<script setup lang="ts">
+import { computed } from 'vue'
+import type { Listing } from '../services/listings'
+
+const props = defineProps<{
+  listing: Listing
+}>()
+
+const formattedPrice = computed(() => {
+  if (props.listing.type === 'DOACAO') return 'Doação'
+  if (props.listing.type === 'SERVICO') {
+    if (props.listing.pricing_type === 'A_COMBINAR') return 'A combinar'
+    if (!props.listing.price_cents) return 'Sob consulta'
+    const value = (props.listing.price_cents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+    return props.listing.pricing_type === 'POR_HORA' ? `${value}/h` : value
+  }
+  if (props.listing.price_cents) {
+    return (props.listing.price_cents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+  }
+  return ''
+})
+
+const coverPhoto = computed(() => {
+  if (props.listing.photos && props.listing.photos.length > 0) {
+    return props.listing.photos[0]?.url
+  }
+  return 'https://via.placeholder.com/300?text=Sem+Foto'
+})
+
+const badgeColor = computed(() => {
+  if (props.listing.type === 'VENDA') return 'bg-blue-100 text-blue-800'
+  if (props.listing.type === 'DOACAO') return 'bg-emerald-100 text-emerald-800'
+  return 'bg-purple-100 text-purple-800'
+})
+</script>
+
+<template>
+  <RouterLink :to="`/listing/${listing.id}`" class="block bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow active:scale-[0.98]">
+    <div class="aspect-square w-full bg-gray-100 relative">
+      <img :src="coverPhoto" :alt="listing.title" class="w-full h-full object-cover" />
+      <div class="absolute top-2 left-2 px-2 py-1 rounded-md text-xs font-bold uppercase tracking-wider shadow-sm" :class="badgeColor">
+        {{ listing.type }}
+      </div>
+    </div>
+    
+    <div class="p-3">
+      <p v-if="listing.category?.name" class="text-xs text-gray-500 uppercase tracking-widest font-semibold mb-1">
+        {{ listing.category.name }}
+      </p>
+      <h3 class="font-semibold text-gray-900 leading-tight mb-2 line-clamp-2">
+        {{ listing.title }}
+      </h3>
+      <div class="flex items-center justify-between">
+        <span class="font-extrabold text-primary-600 text-lg tracking-tight">
+          {{ formattedPrice }}
+        </span>
+        <span v-if="listing.condition" class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+          {{ listing.condition }}
+        </span>
+      </div>
+    </div>
+  </RouterLink>
+</template>

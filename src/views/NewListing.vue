@@ -1,0 +1,241 @@
+<script setup lang="ts">
+import { ref, onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '../stores/auth'
+import { listingsService, type Category } from '../services/listings'
+import { UploadCloud, X } from 'lucide-vue-next'
+
+const router = useRouter()
+const authStore = useAuthStore()
+
+const type = ref<'VENDA' | 'DOACAO' | 'SERVICO'>('VENDA')
+const categoryId = ref<number | null>(null)
+const title = ref('')
+const description = ref('')
+const condition = ref<'NOVO' | 'USADO'>('USADO')
+const price = ref('')
+const pricingType = ref<'FIXO' | 'POR_HORA' | 'A_COMBINAR'>('FIXO')
+const locationHint = ref('')
+
+const files = ref<File[]>([])
+const fileUrls = ref<string[]>([])
+const categories = ref<Category[]>([])
+const submitting = ref(false)
+const errorMsg = ref('')
+
+const filteredCategories = computed(() => {
+  if (type.value === 'SERVICO') {
+    return categories.value.filter(c => c.category_group === 'SERVICO' || c.category_group === 'GERAL')
+  }
+  return categories.value.filter(c => c.category_group === 'PRODUTO' || c.category_group === 'GERAL')
+})
+
+function handleFileSelect(e: Event) {
+  const target = e.target as HTMLInputElement
+  if (!target.files) return
+  
+  for (let i = 0; i < target.files.length; i++) {
+    if (files.value.length >= 6) break // max 6 photos
+    const file = target.files[i]
+    if (!file) continue
+    files.value.push(file)
+    fileUrls.value.push(URL.createObjectURL(file))
+  }
+  target.value = ''
+}
+
+function removeFile(index: number) {
+  files.value.splice(index, 1)
+  fileUrls.value.splice(index, 1)
+}
+
+async function handleSubmit() {
+  if (!authStore.user) return
+  
+  if (!categoryId.value) {
+    errorMsg.value = 'Selecione uma categoria'
+    return
+  }
+  
+  if (type.value === 'VENDA' && !price.value) {
+    errorMsg.value = 'Informe um preço para a venda'
+    return
+  }
+
+  errorMsg.value = ''
+  submitting.value = true
+  
+  try {
+    const payload: any = {
+      owner_id: authStore.user.id,
+      title: title.value,
+      description: description.value,
+      category_id: categoryId.value,
+      type: type.value,
+      location_hint: locationHint.value || null
+    }
+    
+    if (type.value === 'VENDA') {
+      // transform "100.50" string to 10050 cents
+      payload.price_cents = Math.round(parseFloat(price.value.replace(',', '.')) * 100)
+      payload.condition = condition.value
+    } else if (type.value === 'SERVICO') {
+      payload.pricing_type = pricingType.value
+      if (pricingType.value !== 'A_COMBINAR' && price.value) {
+        payload.price_cents = Math.round(parseFloat(price.value.replace(',', '.')) * 100)
+      }
+    }
+    
+    const newListing = await listingsService.createListing(payload, files.value)
+    router.replace(`/listing/${newListing.id}`)
+  } catch (err: any) {
+    console.error(err)
+    errorMsg.value = err.message || 'Erro ao criar anúncio.'
+  } finally {
+    submitting.value = false
+  }
+}
+
+onMounted(async () => {
+  categories.value = await listingsService.getCategories()
+})
+</script>
+
+<template>
+  <div class="bg-gray-50 min-h-screen pb-20 md:pb-10">
+    <div class="px-4 py-4 bg-white border-b border-gray-100 sticky top-0 z-10">
+      <h1 class="text-xl font-bold text-gray-900">Novo Anúncio</h1>
+    </div>
+
+    <form @submit.prevent="handleSubmit" class="p-4 max-w-2xl mx-auto space-y-6">
+      <div v-if="errorMsg" class="p-3 bg-red-50 text-red-700 rounded-lg text-sm">
+        {{ errorMsg }}
+      </div>
+
+      <!-- Type -->
+      <div>
+        <label class="block text-sm font-bold text-gray-700 mb-2">O que você quer anunciar?</label>
+        <div class="grid grid-cols-3 gap-2">
+          <button 
+            type="button" 
+            @click="type = 'VENDA'"
+            class="py-3 px-2 rounded-xl text-xs font-bold transition-all border-2"
+            :class="type === 'VENDA' ? 'border-primary-600 bg-primary-50 text-primary-700' : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300'"
+          >
+            Venda
+          </button>
+          <button 
+             type="button" 
+             @click="type = 'DOACAO'"
+            class="py-3 px-2 rounded-xl text-xs font-bold transition-all border-2"
+            :class="type === 'DOACAO' ? 'border-primary-600 bg-primary-50 text-primary-700' : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300'"
+          >
+            Doação
+          </button>
+          <button 
+             type="button" 
+             @click="type = 'SERVICO'"
+            class="py-3 px-2 rounded-xl text-xs font-bold transition-all border-2"
+            :class="type === 'SERVICO' ? 'border-primary-600 bg-primary-50 text-primary-700' : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300'"
+          >
+            Serviço
+          </button>
+        </div>
+      </div>
+
+      <!-- Basic Info -->
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Título do Anúncio</label>
+          <input v-model="title" required maxlength="60" placeholder="Ex: Bicicleta Aro 29" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 outline-none" />
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Descrição</label>
+          <textarea v-model="description" required rows="4" placeholder="Descreva os detalhes..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 outline-none resize-none"></textarea>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Categoria</label>
+          <select v-model="categoryId" required class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-primary-500 focus:border-primary-500 outline-none">
+            <option :value="null" disabled>Selecione...</option>
+            <option v-for="cat in filteredCategories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Details specific to type -->
+      <div v-if="type === 'VENDA'" class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Condição</label>
+          <div class="flex gap-4">
+            <label class="flex items-center">
+              <input type="radio" v-model="condition" value="NOVO" class="text-primary-600 focus:ring-primary-500" />
+              <span class="ml-2">Novo</span>
+            </label>
+            <label class="flex items-center">
+              <input type="radio" v-model="condition" value="USADO" class="text-primary-600 focus:ring-primary-500" />
+              <span class="ml-2">Usado</span>
+            </label>
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Preço (R$)</label>
+          <input v-model="price" type="number" step="0.01" min="0" required placeholder="0.00" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 outline-none" />
+        </div>
+      </div>
+
+      <div v-if="type === 'SERVICO'" class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Forma de Cobrança</label>
+          <select v-model="pricingType" required class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-primary-500 focus:border-primary-500 outline-none">
+            <option value="FIXO">Valor Fixo</option>
+            <option value="POR_HORA">Por Hora</option>
+            <option value="A_COMBINAR">A Combinar</option>
+          </select>
+        </div>
+        <div v-if="pricingType !== 'A_COMBINAR'">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Valor Referência (R$)</label>
+          <input v-model="price" type="number" step="0.01" min="0" placeholder="Opcional" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 outline-none" />
+        </div>
+      </div>
+
+      <!-- Specific Location -->
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+        <label class="block text-sm font-medium text-gray-700 mb-1">Onde encontrar? (Opcional)</label>
+        <p class="text-xs text-gray-500 mb-2">Seu apartamento ou bloco não será mostrado por padrão, mas você pode dar uma dica de localização se quiser.</p>
+        <input v-model="locationHint" placeholder="Ex: Bloco B" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 outline-none" />
+      </div>
+
+      <!-- Photos -->
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Fotos (Máx 6)</label>
+        
+        <div class="grid grid-cols-3 gap-2 mb-3">
+          <div v-for="(url, idx) in fileUrls" :key="idx" class="relative aspect-square rounded-lg border border-gray-200 overflow-hidden group">
+            <img :src="url" class="w-full h-full object-cover">
+            <button @click.prevent="removeFile(idx)" class="absolute top-1 right-1 bg-black/50 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <X class="w-3 h-3" />
+            </button>
+          </div>
+          
+          <label v-if="files.length < 6" class="aspect-square rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-500 hover:border-primary-500 hover:text-primary-500 transition-colors cursor-pointer bg-gray-50 relative overflow-hidden">
+            <UploadCloud class="w-6 h-6 mb-1" />
+            <span class="text-xs font-medium">Add Foto</span>
+            <input type="file" accept="image/*" multiple @change="handleFileSelect" class="absolute inset-0 opacity-0 cursor-pointer" />
+          </label>
+        </div>
+      </div>
+
+      <button 
+        type="submit" 
+        :disabled="submitting"
+        class="w-full bg-primary-600 hover:bg-primary-700 text-white font-bold py-4 px-4 rounded-xl shadow-[0_4px_14px_0_rgba(22,163,74,0.39)] transition-transform active:scale-95 disabled:opacity-70 disabled:active:scale-100 mt-4"
+      >
+        <span v-if="submitting">Publicando...</span>
+        <span v-else>Publicar Anúncio</span>
+      </button>
+
+    </form>
+  </div>
+</template>
