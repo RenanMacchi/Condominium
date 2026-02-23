@@ -65,7 +65,9 @@ async function handleResetPassword() {
       
       <div class="text-center mb-8">
         <h1 class="text-3xl font-extrabold text-primary-600 mb-2">Condomínio Store</h1>
-        <p class="text-gray-500">O seu marketplace interno</p>
+        <p class="text-gray-600 font-medium mt-4 text-lg">
+          {{ isSignUp ? 'Criar Nova Conta' : 'Entrar na sua conta' }}
+        </p>
       </div>
       
       <form @submit.prevent="handleSubmit" class="space-y-5">
@@ -98,10 +100,10 @@ async function handleResetPassword() {
         <button 
           type="submit" 
           :disabled="loading"
-          class="w-full bg-primary-600 hover:bg-primary-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition-transform active:scale-95 disabled:opacity-70 disabled:active:scale-100"
+          class="w-full bg-primary-600 hover:bg-primary-700 text-white font-extrabold text-lg py-3.5 px-4 rounded-xl shadow-lg transition-all active:scale-95 disabled:opacity-70 disabled:active:scale-100"
         >
           <span v-if="loading">Aguarde...</span>
-          <span v-else>{{ isSignUp ? 'Criar Conta' : 'Entrar' }}</span>
+          <span v-else>{{ isSignUp ? 'Cadastrar' : 'Entrar' }}</span>
         </button>
       </form>
       

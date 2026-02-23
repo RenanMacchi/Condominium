@@ -20,6 +20,11 @@ const router = createRouter({
 router.beforeEach(async (to, _from, next) => {
     const { data: { session } } = await supabase.auth.getSession()
 
+    // Intercept Supabase Recovery Link (arrives as hash on root usually)
+    if (to.hash.includes('type=recovery')) {
+        return next({ path: '/reset-password', hash: to.hash })
+    }
+
     // MVP rule: "Apenas usuários logados podem ver/interagir com listagens" or public can see.
     // The plan was approved: reading listings restricted to logged-in users.
     const requiresAuth = to.meta.requiresAuth !== false && to.path !== '/login' && to.path !== '/reset-password'
