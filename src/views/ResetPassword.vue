@@ -42,7 +42,7 @@ async function handleSetNewPassword() {
     <div class="max-w-md w-full bg-white rounded-2xl shadow-xl overflow-hidden p-8">
       
       <div class="text-center mb-8">
-        <h1 class="text-2xl font-extrabold text-primary-600 mb-2">Redefinir Senha</h1>
+        <h1 class="text-2xl font-extrabold text-green-600 mb-2">Redefinir Senha</h1>
         <p class="text-gray-500">Digite sua nova senha abaixo</p>
       </div>
       
@@ -65,7 +65,7 @@ async function handleSetNewPassword() {
         <button 
           type="submit" 
           :disabled="loading || !!errorMsg"
-          class="w-full bg-primary-600 hover:bg-primary-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition-transform active:scale-95 disabled:opacity-70 disabled:active:scale-100"
+          class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition-transform active:scale-95 disabled:opacity-70 disabled:active:scale-100"
         >
           <span v-if="loading">Aguarde...</span>
           <span v-else>Salvar Nova Senha</span>
@@ -73,7 +73,7 @@ async function handleSetNewPassword() {
       </form>
       
       <div class="mt-6 text-center text-sm text-gray-600">
-        <button @click="router.push('/login')" class="text-primary-600 font-semibold hover:underline">
+        <button @click="router.push('/login')" class="text-green-600 font-semibold hover:underline">
           Voltar para o login
         </button>
       </div>

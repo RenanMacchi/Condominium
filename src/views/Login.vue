@@ -64,7 +64,7 @@ async function handleResetPassword() {
     <div class="max-w-md w-full bg-white rounded-2xl shadow-xl overflow-hidden p-8">
       
       <div class="text-center mb-8">
-        <h1 class="text-3xl font-extrabold text-primary-600 mb-2">Condomínio Store</h1>
+        <h1 class="text-3xl font-extrabold text-green-600 mb-2">Condomínio Store</h1>
         <p class="text-gray-600 font-medium mt-4 text-lg">
           {{ isSignUp ? 'Criar Nova Conta' : 'Entrar na sua conta' }}
         </p>
@@ -97,10 +97,10 @@ async function handleResetPassword() {
           >
         </div>
         
-        <button 
+          <button 
           type="submit" 
           :disabled="loading"
-          class="w-full bg-primary-600 hover:bg-primary-700 text-white font-extrabold text-lg py-3.5 px-4 rounded-xl shadow-lg transition-all active:scale-95 disabled:opacity-70 disabled:active:scale-100"
+          class="w-full bg-green-600 hover:bg-green-700 text-white font-extrabold text-lg py-3.5 px-4 rounded-xl shadow-lg transition-all active:scale-95 disabled:opacity-70 disabled:active:scale-100"
         >
           <span v-if="loading">Aguarde...</span>
           <span v-else>{{ isSignUp ? 'Cadastrar' : 'Entrar' }}</span>
@@ -108,7 +108,7 @@ async function handleResetPassword() {
       </form>
       
       <div class="mt-6 text-center text-sm text-gray-600">
-        <button @click="isSignUp = !isSignUp" class="text-primary-600 font-semibold hover:underline">
+        <button @click="isSignUp = !isSignUp" class="text-green-600 font-semibold hover:underline">
           {{ isSignUp ? 'Já tem uma conta? Entrar' : 'Não tem conta? Cadastre-se' }}
         </button>
       </div>
