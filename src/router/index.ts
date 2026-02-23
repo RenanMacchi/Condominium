@@ -21,7 +21,7 @@ router.beforeEach(async (to, _from, next) => {
     const { data: { session } } = await supabase.auth.getSession()
 
     // Intercept Supabase Recovery Link (arrives as hash on root usually)
-    if (to.hash.includes('type=recovery')) {
+    if (to.hash.includes('type=recovery') && to.path !== '/reset-password') {
         return next({ path: '/reset-password', hash: to.hash })
     }
 
