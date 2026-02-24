@@ -4,7 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { listingsService, type Listing } from '../services/listings'
 import { favoritesService } from '../services/favorites'
 import { useAuthStore } from '../stores/auth'
-import { ChevronLeft, Heart, MessageCircle, MapPin } from 'lucide-vue-next'
+import { ChevronLeft, ChevronRight, X, Heart, MessageCircle, MapPin } from 'lucide-vue-next'
 
 const route = useRoute()
 const router = useRouter()
@@ -17,6 +17,23 @@ const isFavorite = ref(false)
 const togglingFavorite = ref(false)
 const currentImageIndex = ref(0)
 const notFound = ref(false)
+const showImageModal = ref(false)
+
+function nextImage() {
+  if (!listing.value || !listing.value.photos) return
+  currentImageIndex.value = (currentImageIndex.value + 1) % listing.value.photos.length
+}
+
+function prevImage() {
+  if (!listing.value || !listing.value.photos) return
+  currentImageIndex.value = (currentImageIndex.value - 1 + listing.value.photos.length) % listing.value.photos.length
+}
+
+function openModal() {
+  if (listing.value?.photos?.length) {
+    showImageModal.value = true
+  }
+}
 
 async function loadListing() {
   loading.value = true
@@ -105,20 +122,41 @@ onMounted(() => {
 
     <div v-else class="pt-[60px] max-w-2xl mx-auto bg-white min-h-screen shadow-sm">
       <!-- Image Gallery -->
-      <div class="aspect-[4/3] bg-gray-100 relative group">
-        <img 
-          v-if="listing.photos && listing.photos.length > 0"
-          :src="listing.photos[currentImageIndex]?.url" 
-          :alt="listing.title"
-          class="w-full h-full object-cover"
-        />
+      <div class="aspect-[4/3] bg-gray-100 relative group overflow-hidden">
+        <template v-if="listing.photos && listing.photos.length > 0">
+          <img 
+            :src="listing.photos[currentImageIndex]?.url" 
+            :alt="listing.title"
+            class="w-full h-full object-cover cursor-pointer transition-transform duration-500 hover:scale-105"
+            @click="openModal"
+          />
+          
+          <!-- Navigation Arrows -->
+          <button v-if="listing.photos.length > 1" @click.stop="prevImage" class="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/40 hover:bg-black/60 text-white rounded-full flex items-center justify-center backdrop-blur-sm transition-all opacity-0 group-hover:opacity-100 active:scale-95">
+            <ChevronLeft class="w-6 h-6 -ml-1 text-white" />
+          </button>
+          <button v-if="listing.photos.length > 1" @click.stop="nextImage" class="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/40 hover:bg-black/60 text-white rounded-full flex items-center justify-center backdrop-blur-sm transition-all opacity-0 group-hover:opacity-100 active:scale-95">
+            <ChevronRight class="w-6 h-6 -mr-1 text-white" />
+          </button>
+
+          <!-- Dots -->
+          <div v-if="listing.photos.length > 1" class="absolute bottom-3 left-0 w-full flex justify-center gap-1.5 z-10">
+            <button 
+              v-for="(_, idx) in listing.photos" 
+              :key="idx" 
+              @click.stop="currentImageIndex = idx"
+              class="w-2 h-2 rounded-full transition-all"
+              :class="currentImageIndex === idx ? 'bg-white w-4' : 'bg-white/50 hover:bg-white/90 shadow-sm'"
+            ></button>
+          </div>
+        </template>
         <div v-else class="w-full h-full flex items-center justify-center text-gray-400">
            Sem imagens
         </div>
         
         <!-- Badges -->
-        <div class="absolute top-3 left-3 flex gap-2">
-          <span class="px-2 py-1 rounded bg-black/60 text-white text-xs font-bold uppercase tracking-wider backdrop-blur-sm">
+        <div class="absolute top-3 left-3 flex gap-2 pointer-events-none z-10">
+          <span class="px-2 py-1 rounded bg-black/60 text-white text-xs font-bold uppercase tracking-wider backdrop-blur-md">
             {{ listing.type }}
           </span>
           <span v-if="listing.condition" class="px-2 py-1 rounded bg-white text-gray-900 text-xs font-bold uppercase tracking-wider shadow-sm">
@@ -196,6 +234,35 @@ onMounted(() => {
         </button>
       </div>
 
+    <!-- Image Modal -->
+    <div v-if="showImageModal" class="fixed inset-0 z-[100] bg-black/95 flex flex-col items-center justify-center backdrop-blur-xl">
+      <!-- Close -->
+      <button @click="showImageModal = false" class="absolute top-4 right-4 p-3 bg-white/10 hover:bg-white/20 text-white rounded-full transition-all active:scale-95 z-[110]">
+        <X class="w-6 h-6" />
+      </button>
+      
+      <!-- Modal Navigation -->
+      <button v-if="listing?.photos && listing.photos.length > 1" @click.stop="prevImage" class="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 p-3 bg-white/10 hover:bg-white/20 text-white rounded-full transition-all active:scale-95 z-[110]">
+        <ChevronLeft class="w-8 h-8 -ml-1 text-white" />
+      </button>
+      <button v-if="listing?.photos && listing.photos.length > 1" @click.stop="nextImage" class="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 p-3 bg-white/10 hover:bg-white/20 text-white rounded-full transition-all active:scale-95 z-[110]">
+        <ChevronRight class="w-8 h-8 -mr-1 text-white" />
+      </button>
+
+      <!-- Main Image inside Modal -->
+      <div class="w-full h-full p-4 md:p-12 flex items-center justify-center relative" @click="showImageModal = false">
+        <img 
+          :src="listing?.photos?.[currentImageIndex]?.url" 
+          class="max-w-full max-h-full object-contain select-none cursor-default"
+          @click.stop
+        />
+      </div>
+      
+      <!-- Counter -->
+      <div v-if="listing?.photos && listing.photos.length > 1" class="absolute bottom-6 left-1/2 -translate-x-1/2 text-white font-medium bg-black/50 px-4 py-1.5 rounded-full backdrop-blur-md text-sm z-[110]">
+        {{ currentImageIndex + 1 }} / {{ listing.photos.length }}
+      </div>
+    </div>
     </div>
   </div>
 </template>
