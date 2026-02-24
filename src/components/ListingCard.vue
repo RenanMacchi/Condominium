@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import type { Listing } from '../services/listings'
 import { useAuthStore } from '../stores/auth'
-import { Edit2 } from 'lucide-vue-next'
+import { Edit2, Heart } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 
 const authStore = useAuthStore()
@@ -46,6 +46,12 @@ const badgeColor = computed(() => {
       <img :src="coverPhoto" :alt="listing.title" class="w-full h-full object-cover transition-all" :class="{'grayscale opacity-50': listing.status === 'CONCLUIDO'}" />
       <div class="absolute top-2 left-2 px-2 py-1 rounded-md text-xs font-bold uppercase tracking-wider shadow-sm" :class="badgeColor">
         {{ listing.type }}
+      </div>
+
+      <!-- Favorites Badge -->
+      <div v-if="listing.favorites_count && listing.favorites_count > 0" class="absolute bottom-2 left-2 bg-black/60 backdrop-blur-sm text-white px-2 py-1 rounded-full text-xs font-bold flex items-center gap-1 shadow-sm">
+        <Heart class="w-3 h-3 fill-white" />
+        {{ listing.favorites_count }}
       </div>
       
       <!-- Edit Button overlay if Owner -->

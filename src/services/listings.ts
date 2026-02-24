@@ -20,6 +20,7 @@ export interface Listing {
     price_cents?: number
     pricing_type?: 'FIXO' | 'POR_HORA' | 'A_COMBINAR'
     show_contact: boolean
+    favorites_count?: number
     photos?: { url: string }[]
     category?: Category
 }
@@ -40,6 +41,7 @@ export const listingsService = {
         category:categories(name, icon)
       `)
             .eq('status', statusFilter)
+            .order('favorites_count', { ascending: false })
             .order('created_at', { ascending: false })
             .limit(20)
 
@@ -114,7 +116,7 @@ export const listingsService = {
             query = query.eq('category_id', searchParams.category_id)
         }
 
-        query = query.order('created_at', { ascending: false }).limit(40)
+        query = query.order('favorites_count', { ascending: false }).order('created_at', { ascending: false }).limit(40)
 
         const { data, error } = await query
         if (error) throw error
