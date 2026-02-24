@@ -4,11 +4,16 @@ import { listingsService, type Listing, type Category } from '../services/listin
 import CategoryChips from '../components/CategoryChips.vue'
 import ListingCard from '../components/ListingCard.vue'
 
+import { useAuthStore } from '../stores/auth'
+
+const authStore = useAuthStore()
+
 const tabs = [
   { label: 'Tudo', value: '' },
   { label: 'Vendas', value: 'VENDA' },
   { label: 'Doações', value: 'DOACAO' },
-  { label: 'Serviços', value: 'SERVICO' }
+  { label: 'Serviços', value: 'SERVICO' },
+  { label: 'Meus', value: 'MEUS' }
 ]
 
 const currentTab = ref('')
@@ -23,7 +28,13 @@ async function loadData() {
     if (categories.value.length === 0) {
       categories.value = await listingsService.getCategories()
     }
-    listings.value = await listingsService.getLatestActivListings(currentTab.value, currentCategory.value || undefined)
+    
+    if (currentTab.value === 'MEUS' && authStore.user) {
+      // Load user specific listings (bypassing active only filter)
+      listings.value = await listingsService.getMyListings(authStore.user.id)
+    } else {
+      listings.value = await listingsService.getLatestActivListings(currentTab.value, currentCategory.value || undefined)
+    }
   } catch (error) {
     console.error('Error loading listings', error)
   } finally {

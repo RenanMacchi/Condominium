@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { Listing } from '../services/listings'
+import { useAuthStore } from '../stores/auth'
+import { Edit2 } from 'lucide-vue-next'
+import { useRouter } from 'vue-router'
+
+const authStore = useAuthStore()
+const router = useRouter()
 
 const props = defineProps<{
   listing: Listing
@@ -41,6 +47,16 @@ const badgeColor = computed(() => {
       <div class="absolute top-2 left-2 px-2 py-1 rounded-md text-xs font-bold uppercase tracking-wider shadow-sm" :class="badgeColor">
         {{ listing.type }}
       </div>
+      
+      <!-- Edit Button overlay if Owner -->
+      <button 
+        v-if="authStore.user && listing.owner_id === authStore.user.id"
+        @click.prevent="router.push(`/edit/${listing.id}`)"
+        class="absolute top-2 right-2 p-2 bg-white/90 hover:bg-white text-primary-600 rounded-full shadow-sm backdrop-blur-sm transition-all active:scale-95 z-10"
+        title="Editar Anúncio"
+      >
+        <Edit2 class="w-4 h-4" />
+      </button>
     </div>
     
     <div class="p-3">
