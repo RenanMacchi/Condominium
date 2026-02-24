@@ -85,6 +85,14 @@ onUnmounted(() => {
       <!-- Tabs -->
       <div class="px-2 pt-2 border-b border-gray-100 overflow-x-auto hide-scrollbar">
         <div class="flex pb-2 items-center">
+          <RouterLink
+            v-if="authStore.user"
+            to="/me"
+            class="flex-shrink-0 mr-2 px-4 py-1.5 text-sm font-extrabold text-white bg-green-600 rounded-full shadow-sm hover:bg-green-700 transition-colors whitespace-nowrap"
+          >
+            Meus Anúncios
+          </RouterLink>
+
           <button 
             v-for="tab in tabs" 
             :key="tab.value"
@@ -94,14 +102,6 @@ onUnmounted(() => {
           >
             {{ tab.label }}
           </button>
-          
-          <RouterLink
-            v-if="authStore.user"
-            to="/me"
-            class="flex-shrink-0 ml-2 px-4 py-1.5 text-sm font-extrabold text-white bg-green-600 rounded-full shadow-sm hover:bg-green-700 transition-colors whitespace-nowrap"
-          >
-            Meus Anúncios
-          </RouterLink>
         </div>
       </div>
 

@@ -120,14 +120,14 @@ onMounted(() => {
           <h3 class="font-bold text-gray-900 truncate mb-1">{{ listing.title }}</h3>
           
           <!-- Quick Status Changer -->
-          <div class="mt-2 flex gap-2 w-full max-w-[200px]">
+          <div class="mt-2 flex gap-2 w-full max-w-[130px]">
             <select 
               :value="listing.status" 
               @change="(e) => changeStatus(listing, (e.target as HTMLSelectElement).value)"
-              class="text-xs border border-gray-300 rounded px-2 py-1 flex-1 bg-gray-50 outline-none focus:border-green-500"
+              class="text-[11px] border border-gray-300 rounded px-2 py-1 flex-1 bg-gray-50 outline-none focus:border-green-500 font-medium"
             >
               <option v-for="opt in getOptions(listing.type)" :key="opt.value" :value="opt.value">
-                Mudar p/ {{ opt.label }}
+                {{ opt.label }}
               </option>
             </select>
           </div>
