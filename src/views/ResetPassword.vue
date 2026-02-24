@@ -28,7 +28,7 @@ async function handleSetNewPassword() {
     if (error) throw error
     
     alert('Senha atualizada com sucesso!')
-    window.location.href = '/'
+    router.push('/login')
   } catch (err: any) {
     errorMsg.value = err.message || 'Erro ao atualizar a senha'
   } finally {
