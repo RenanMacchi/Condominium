@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { listingsService, type Category } from '../services/listings'
-import { UploadCloud, X } from 'lucide-vue-next'
 
 const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
+const listingId = route.params.id as string
 
 const type = ref<'VENDA' | 'DOACAO' | 'SERVICO'>('VENDA')
 const categoryId = ref<number | null>(null)
@@ -17,8 +18,6 @@ const price = ref('')
 const pricingType = ref<'FIXO' | 'POR_HORA' | 'A_COMBINAR'>('FIXO')
 const showContact = ref(true)
 
-const files = ref<File[]>([])
-const fileUrls = ref<string[]>([])
 const categories = ref<Category[]>([])
 const submitting = ref(false)
 const errorMsg = ref('')
@@ -30,24 +29,7 @@ const filteredCategories = computed(() => {
   return categories.value.filter(c => c.category_group === 'PRODUTO' || c.category_group === 'GERAL')
 })
 
-function handleFileSelect(e: Event) {
-  const target = e.target as HTMLInputElement
-  if (!target.files) return
-  
-  for (let i = 0; i < target.files.length; i++) {
-    if (files.value.length >= 6) break // max 6 photos
-    const file = target.files[i]
-    if (!file) continue
-    files.value.push(file)
-    fileUrls.value.push(URL.createObjectURL(file))
-  }
-  target.value = ''
-}
-
-function removeFile(index: number) {
-  files.value.splice(index, 1)
-  fileUrls.value.splice(index, 1)
-}
+// Photos locked for MVP editing
 
 async function handleSubmit() {
   if (!authStore.user) return
@@ -86,11 +68,11 @@ async function handleSubmit() {
       }
     }
     
-    const newListing = await listingsService.createListing(payload, files.value)
-    router.replace(`/listing/${newListing.id}`)
+    const updated = await listingsService.updateListing(listingId, payload)
+    router.replace(`/listing/${updated.id}`)
   } catch (err: any) {
     console.error(err)
-    errorMsg.value = err.message || 'Erro ao criar anúncio.'
+    errorMsg.value = err.message || 'Erro ao atualizar anúncio.'
   } finally {
     submitting.value = false
   }
@@ -98,13 +80,38 @@ async function handleSubmit() {
 
 onMounted(async () => {
   categories.value = await listingsService.getCategories()
+  
+  // Load existing data
+  try {
+    const data = await listingsService.getListingById(listingId)
+    if (data.owner_id !== authStore.user?.id) {
+      router.push('/me')
+      return
+    }
+    type.value = data.type
+    categoryId.value = data.category_id
+    title.value = data.title
+    description.value = data.description
+    showContact.value = data.show_contact
+    
+    if (data.type === 'VENDA') {
+      condition.value = data.condition || 'USADO'
+      if (data.price_cents) price.value = (data.price_cents / 100).toFixed(2)
+    } else if (data.type === 'SERVICO') {
+      pricingType.value = data.pricing_type || 'FIXO'
+      if (data.price_cents) price.value = (data.price_cents / 100).toFixed(2)
+    }
+  } catch (e) {
+    console.error(e)
+    router.push('/me')
+  }
 })
 </script>
 
 <template>
   <div class="bg-gray-50 min-h-screen pb-20 md:pb-10">
     <div class="px-4 py-4 bg-white border-b border-gray-100 sticky top-0 z-10">
-      <h1 class="text-xl font-bold text-gray-900">Novo Anúncio</h1>
+      <h1 class="text-xl font-bold text-gray-900">Editar Anúncio</h1>
     </div>
 
     <form @submit.prevent="handleSubmit" class="p-4 max-w-2xl mx-auto space-y-6">
@@ -218,24 +225,10 @@ onMounted(async () => {
         </label>
       </div>
 
-      <!-- Photos -->
-      <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-        <label class="block text-sm font-medium text-gray-700 mb-2">Fotos (Máx 6)</label>
-        
-        <div class="grid grid-cols-3 gap-2 mb-3">
-          <div v-for="(url, idx) in fileUrls" :key="idx" class="relative aspect-square rounded-lg border border-gray-200 overflow-hidden group">
-            <img :src="url" class="w-full h-full object-cover">
-            <button @click.prevent="removeFile(idx)" class="absolute top-1 right-1 bg-black/50 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity">
-              <X class="w-3 h-3" />
-            </button>
-          </div>
-          
-          <label v-if="files.length < 6" class="aspect-square rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-500 hover:border-primary-500 hover:text-primary-500 transition-colors cursor-pointer bg-gray-50 relative overflow-hidden">
-            <UploadCloud class="w-6 h-6 mb-1" />
-            <span class="text-xs font-medium">Add Foto</span>
-            <input type="file" accept="image/*" multiple @change="handleFileSelect" class="absolute inset-0 opacity-0 cursor-pointer" />
-          </label>
-        </div>
+      <!-- Photos (Read-Only Info) -->
+      <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 text-center">
+        <p class="text-sm text-gray-500 font-medium">As fotos não podem ser alteradas nesta versão.</p>
+        <p class="text-xs text-gray-400 mt-1">Para mudar as fotos, crie um novo anúncio.</p>
       </div>
 
       <button 
@@ -243,8 +236,8 @@ onMounted(async () => {
         :disabled="submitting"
         class="w-full bg-green-600 hover:bg-green-700 text-white font-extrabold text-lg py-3.5 px-4 rounded-xl shadow-lg transition-all active:scale-95 disabled:opacity-70 disabled:active:scale-100 mt-4"
       >
-        <span v-if="submitting">Publicando...</span>
-        <span v-else>Publicar Anúncio</span>
+        <span v-if="submitting">Salvando...</span>
+        <span v-else>Salvar Alterações</span>
       </button>
 
     </form>

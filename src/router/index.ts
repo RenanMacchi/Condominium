@@ -9,6 +9,7 @@ const router = createRouter({
         { path: '/login', component: () => import('../views/Login.vue') },
         { path: '/reset-password', component: () => import('../views/ResetPassword.vue'), meta: { requiresAuth: false } },
         { path: '/listing/:id', component: () => import('../views/ListingDetail.vue') },
+        { path: '/edit/:id', component: () => import('../views/EditListing.vue'), meta: { requiresAuth: true } },
         { path: '/new', component: () => import('../views/NewListing.vue'), meta: { requiresAuth: true } },
         { path: '/me', component: () => import('../views/MyListings.vue'), meta: { requiresAuth: true } },
         { path: '/favorites', component: () => import('../views/Favorites.vue'), meta: { requiresAuth: true } },

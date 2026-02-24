@@ -8,8 +8,8 @@ const router = useRouter()
 const authStore = useAuthStore()
 const displayName = ref('')
 const whatsapp = ref('')
-const block = ref('')
-const apartment = ref('')
+const site = ref('')
+const house = ref('')
 const saving = ref(false)
 const msg = ref('')
 
@@ -17,8 +17,8 @@ onMounted(() => {
   if (authStore.profile) {
     displayName.value = authStore.profile.display_name || ''
     whatsapp.value = authStore.profile.whatsapp || ''
-    block.value = authStore.profile.block || ''
-    apartment.value = authStore.profile.apartment || ''
+    site.value = authStore.profile.site || ''
+    house.value = authStore.profile.house || ''
   }
 })
 
@@ -32,8 +32,8 @@ async function saveProfile() {
     .update({
       display_name: displayName.value,
       whatsapp: whatsapp.value,
-      block: block.value,
-      apartment: apartment.value,
+      site: site.value,
+      house: house.value,
     })
     .eq('id', authStore.user.id)
     
@@ -71,12 +71,12 @@ async function handleSignOut() {
       </div>
       <div class="flex gap-4">
         <div class="flex-1">
-          <label class="block text-sm font-medium text-gray-700">Bloco (Opcional)</label>
-          <input v-model="block" class="mt-1 w-full px-3 py-2 border rounded-lg" />
+          <label class="block text-sm font-medium text-gray-700">Site Público (Opcional)</label>
+          <input v-model="site" placeholder="ex: seussite.com.br" class="mt-1 w-full px-3 py-2 border rounded-lg" />
         </div>
         <div class="flex-1">
-          <label class="block text-sm font-medium text-gray-700">Apto (Opcional)</label>
-          <input v-model="apartment" class="mt-1 w-full px-3 py-2 border rounded-lg" />
+          <label class="block text-sm font-medium text-gray-700">Casa (Opcional)</label>
+          <input v-model="house" placeholder="ex: 12B" class="mt-1 w-full px-3 py-2 border rounded-lg" />
         </div>
       </div>
       

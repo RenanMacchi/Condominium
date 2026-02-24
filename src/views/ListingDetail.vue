@@ -189,17 +189,21 @@ onMounted(() => {
         </div>
 
         <!-- Vendor Info -->
-        <div class="border border-gray-100 rounded-2xl p-4 flex items-center gap-4 bg-gray-50/50 mb-8" v-if="listing.owner">
+        <div class="border border-gray-100 rounded-2xl p-4 flex items-center gap-4 bg-gray-50/50 mb-8" v-if="listing.owner && listing.show_contact !== false">
           <div class="w-12 h-12 bg-gray-200 rounded-full flex-shrink-0 overflow-hidden flex items-center justify-center font-bold text-gray-500 text-lg">
             {{ listing.owner.avatar_url ? '' : (listing.owner.display_name?.charAt(0)?.toUpperCase() || 'U') }}
             <img v-if="listing.owner.avatar_url" :src="listing.owner.avatar_url" class="w-full h-full object-cover">
           </div>
-          <div class="flex-1">
-            <h3 class="font-bold text-gray-900">{{ listing.owner.display_name || 'Usuário' }}</h3>
-            <div class="flex text-xs text-gray-500 mt-1" v-if="listing.owner.block || listing.owner.apartment">
-              <MapPin class="w-3 h-3 mr-1 inline" />
-              <span v-if="listing.owner.block">Bloco {{ listing.owner.block }} </span>
-              <span v-if="listing.owner.apartment" class="ml-1">Apto {{ listing.owner.apartment }}</span>
+          <div class="flex-1 min-w-0">
+            <h3 class="font-bold text-gray-900 truncate">{{ listing.owner.display_name || 'Usuário' }}</h3>
+            <div class="flex flex-col gap-1 text-xs text-gray-500 mt-1" v-if="listing.owner.house || listing.owner.site">
+              <div v-if="listing.owner.house" class="flex items-center">
+                <MapPin class="w-3 h-3 mr-1 inline" />
+                <span>Casa {{ listing.owner.house }}</span>
+              </div>
+              <a v-if="listing.owner.site" :href="listing.owner.site.startsWith('http') ? listing.owner.site : 'https://' + listing.owner.site" target="_blank" class="text-green-600 hover:underline truncate break-all block">
+                {{ listing.owner.site }}
+              </a>
             </div>
           </div>
         </div>
@@ -209,7 +213,8 @@ onMounted(() => {
             U
           </div>
           <div class="flex-1">
-            <h3 class="font-bold text-gray-900">Usuário Desconhecido</h3>
+            <h3 class="font-bold text-gray-900">Contato Oculto</h3>
+            <p class="text-xs text-gray-500 mt-1">O anunciante optou por não exibir o contato.</p>
           </div>
         </div>
 
@@ -218,7 +223,7 @@ onMounted(() => {
       <!-- Fixed bottom CTA -->
       <div class="fixed bottom-16 md:bottom-0 md:sticky md:mt-10 left-0 w-full bg-white border-t border-gray-200 p-4 pb-safe flex gap-3 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-20">
         <button 
-          v-if="listing.owner?.whatsapp"
+          v-if="listing.owner?.whatsapp && listing.show_contact !== false"
           @click="contactOwner"
           class="flex-1 bg-green-500 hover:bg-green-600 text-white font-bold py-3.5 px-4 rounded-xl flex items-center justify-center gap-2 transition-colors shadow-sm active:scale-95"
         >
@@ -230,7 +235,7 @@ onMounted(() => {
           disabled
           class="flex-1 bg-gray-200 text-gray-500 font-bold py-3.5 px-4 rounded-xl flex items-center justify-center transition-colors"
         >
-          Telefone não informado
+          Contato Indisponível
         </button>
       </div>
 

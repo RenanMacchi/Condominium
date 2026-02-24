@@ -2,9 +2,12 @@
 import { ref, onMounted } from 'vue'
 import { listingsService, type Listing } from '../services/listings'
 import { useAuthStore } from '../stores/auth'
-import { Trash2 } from 'lucide-vue-next'
+import { Trash2, Edit2 } from 'lucide-vue-next'
+
+import { useRouter } from 'vue-router'
 
 const authStore = useAuthStore()
+const router = useRouter()
 const listings = ref<Listing[]>([])
 const loading = ref(true)
 
@@ -136,7 +139,10 @@ onMounted(() => {
 
         <!-- Actions -->
         <div class="flex flex-col gap-2 items-end justify-between">
-          <button @click="deleteListing(listing.id)" class="p-2 text-gray-400 hover:text-red-600 transition-colors bg-gray-50 hover:bg-red-50 rounded-lg">
+          <button @click="router.push(`/edit/${listing.id}`)" class="p-2 text-gray-400 hover:text-primary-600 transition-colors bg-gray-50 hover:bg-primary-50 rounded-lg" title="Editar Anúncio">
+            <Edit2 class="w-4 h-4" />
+          </button>
+          <button @click="deleteListing(listing.id)" class="p-2 text-gray-400 hover:text-red-600 transition-colors bg-gray-50 hover:bg-red-50 rounded-lg" title="Excluir Anúncio">
             <Trash2 class="w-4 h-4" />
           </button>
         </div>

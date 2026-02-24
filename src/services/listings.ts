@@ -10,6 +10,7 @@ export interface Category {
 export interface Listing {
     id: string
     created_at: string
+    owner_id: string
     type: 'VENDA' | 'DOACAO' | 'SERVICO'
     title: string
     description: string
@@ -18,6 +19,7 @@ export interface Listing {
     condition?: 'NOVO' | 'USADO'
     price_cents?: number
     pricing_type?: 'FIXO' | 'POR_HORA' | 'A_COMBINAR'
+    show_contact: boolean
     photos?: { url: string }[]
     category?: Category
 }
@@ -62,7 +64,7 @@ export const listingsService = {
         *,
         photos:listing_photos(url, sort_order),
         category:categories!left(name, icon),
-        owner:profiles!owner_id(display_name, whatsapp, block, apartment, avatar_url)
+        owner:profiles!owner_id(display_name, whatsapp, site, house, avatar_url)
       `)
             .eq('id', id)
             .maybeSingle()
@@ -163,6 +165,18 @@ export const listingsService = {
         }
 
         return newListing
+    },
+
+    async updateListing(id: string, listingData: any) {
+        const { data, error } = await supabase
+            .from('listings')
+            .update(listingData)
+            .eq('id', id)
+            .select()
+            .single()
+
+        if (error) throw error
+        return data
     },
 
     async updateStatus(id: string, status: string) {
