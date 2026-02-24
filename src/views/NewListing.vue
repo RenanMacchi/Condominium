@@ -76,13 +76,13 @@ async function handleSubmit() {
     }
     
     if (type.value === 'VENDA') {
-      // transform "100.50" string to 10050 cents
-      payload.price_cents = Math.round(parseFloat(price.value.replace(',', '.')) * 100)
+      // transform "100.50" string or 100.5 number to cents safely
+      payload.price_cents = Math.round(parseFloat(String(price.value).replace(',', '.')) * 100)
       payload.condition = condition.value
     } else if (type.value === 'SERVICO') {
       payload.pricing_type = pricingType.value
       if (pricingType.value !== 'A_COMBINAR' && price.value) {
-        payload.price_cents = Math.round(parseFloat(price.value.replace(',', '.')) * 100)
+        payload.price_cents = Math.round(parseFloat(String(price.value).replace(',', '.')) * 100)
       }
     }
     
@@ -120,7 +120,7 @@ onMounted(async () => {
             type="button" 
             @click="type = 'VENDA'"
             class="py-3 px-2 rounded-xl text-xs font-bold transition-all border-2"
-            :class="type === 'VENDA' ? 'border-primary-600 bg-primary-50 text-primary-700' : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300'"
+            :class="type === 'VENDA' ? 'border-green-600 bg-green-50 text-green-700' : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300'"
           >
             Venda
           </button>
@@ -128,7 +128,7 @@ onMounted(async () => {
              type="button" 
              @click="type = 'DOACAO'"
             class="py-3 px-2 rounded-xl text-xs font-bold transition-all border-2"
-            :class="type === 'DOACAO' ? 'border-primary-600 bg-primary-50 text-primary-700' : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300'"
+            :class="type === 'DOACAO' ? 'border-green-600 bg-green-50 text-green-700' : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300'"
           >
             Doação
           </button>
@@ -136,7 +136,7 @@ onMounted(async () => {
              type="button" 
              @click="type = 'SERVICO'"
             class="py-3 px-2 rounded-xl text-xs font-bold transition-all border-2"
-            :class="type === 'SERVICO' ? 'border-primary-600 bg-primary-50 text-primary-700' : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300'"
+            :class="type === 'SERVICO' ? 'border-green-600 bg-green-50 text-green-700' : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300'"
           >
             Serviço
           </button>
@@ -230,7 +230,7 @@ onMounted(async () => {
       <button 
         type="submit" 
         :disabled="submitting"
-        class="w-full bg-primary-600 hover:bg-primary-700 text-white font-bold py-4 px-4 rounded-xl shadow-[0_4px_14px_0_rgba(22,163,74,0.39)] transition-transform active:scale-95 disabled:opacity-70 disabled:active:scale-100 mt-4"
+        class="w-full bg-green-600 hover:bg-green-700 text-white font-extrabold text-lg py-3.5 px-4 rounded-xl shadow-lg transition-all active:scale-95 disabled:opacity-70 disabled:active:scale-100 mt-4"
       >
         <span v-if="submitting">Publicando...</span>
         <span v-else>Publicar Anúncio</span>
