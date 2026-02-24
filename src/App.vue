@@ -21,6 +21,6 @@ onMounted(() => {
       <RouterView />
     </main>
     
-    <BottomNavigation v-if="!authStore.loading && route.path !== '/login'" />
+    <BottomNavigation v-if="!authStore.loading && route.path !== '/login' && route.path !== '/reset-password'" />
   </div>
 </template>
