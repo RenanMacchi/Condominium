@@ -62,7 +62,7 @@ export const listingsService = {
         *,
         photos:listing_photos(url, sort_order),
         category:categories(name, icon),
-        owner:profiles(display_name, whatsapp, block, apartment, avatar_url)
+        owner:profiles!left(display_name, whatsapp, block, apartment, avatar_url)
       `)
             .eq('id', id)
             .single()

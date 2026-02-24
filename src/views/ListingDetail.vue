@@ -97,8 +97,10 @@ onMounted(() => {
     </div>
     
     <div v-else-if="notFound || !listing" class="pt-24 text-center py-16 px-4">
-      <h3 class="text-lg font-bold text-gray-900 mb-2">Anúncio não encontrado</h3>
-      <button @click="router.push('/')" class="text-primary-600 font-medium">Voltar para o Início</button>
+      <h3 class="text-xl font-bold text-gray-900 mb-6">Anúncio não encontrado</h3>
+      <button @click="router.push('/')" class="w-full max-w-xs mx-auto bg-green-600 hover:bg-green-700 text-white font-extrabold text-lg py-3.5 px-4 rounded-xl shadow-lg transition-all active:scale-95">
+        Voltar para o Início
+      </button>
     </div>
 
     <div v-else class="pt-[60px] max-w-2xl mx-auto bg-white min-h-screen shadow-sm">
@@ -149,18 +151,27 @@ onMounted(() => {
         </div>
 
         <!-- Vendor Info -->
-        <div class="border border-gray-100 rounded-2xl p-4 flex items-center gap-4 bg-gray-50/50 mb-8">
+        <div class="border border-gray-100 rounded-2xl p-4 flex items-center gap-4 bg-gray-50/50 mb-8" v-if="listing.owner">
           <div class="w-12 h-12 bg-gray-200 rounded-full flex-shrink-0 overflow-hidden flex items-center justify-center font-bold text-gray-500 text-lg">
-            {{ listing.owner.avatar_url ? '' : listing.owner.display_name.charAt(0).toUpperCase() }}
+            {{ listing.owner.avatar_url ? '' : (listing.owner.display_name?.charAt(0)?.toUpperCase() || 'U') }}
             <img v-if="listing.owner.avatar_url" :src="listing.owner.avatar_url" class="w-full h-full object-cover">
           </div>
           <div class="flex-1">
-            <h3 class="font-bold text-gray-900">{{ listing.owner.display_name }}</h3>
+            <h3 class="font-bold text-gray-900">{{ listing.owner.display_name || 'Usuário' }}</h3>
             <div class="flex text-xs text-gray-500 mt-1" v-if="listing.owner.block || listing.owner.apartment">
               <MapPin class="w-3 h-3 mr-1 inline" />
               <span v-if="listing.owner.block">Bloco {{ listing.owner.block }} </span>
               <span v-if="listing.owner.apartment" class="ml-1">Apto {{ listing.owner.apartment }}</span>
             </div>
+          </div>
+        </div>
+        
+        <div class="border border-gray-100 rounded-2xl p-4 flex items-center gap-4 bg-gray-50/50 mb-8" v-else>
+          <div class="w-12 h-12 bg-gray-200 rounded-full flex-shrink-0 overflow-hidden flex items-center justify-center font-bold text-gray-500 text-lg">
+            U
+          </div>
+          <div class="flex-1">
+            <h3 class="font-bold text-gray-900">Usuário Desconhecido</h3>
           </div>
         </div>
 
@@ -169,7 +180,7 @@ onMounted(() => {
       <!-- Fixed bottom CTA -->
       <div class="fixed bottom-16 md:bottom-0 md:sticky md:mt-10 left-0 w-full bg-white border-t border-gray-200 p-4 pb-safe flex gap-3 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-20">
         <button 
-          v-if="listing.owner.whatsapp"
+          v-if="listing.owner?.whatsapp"
           @click="contactOwner"
           class="flex-1 bg-green-500 hover:bg-green-600 text-white font-bold py-3.5 px-4 rounded-xl flex items-center justify-center gap-2 transition-colors shadow-sm active:scale-95"
         >
