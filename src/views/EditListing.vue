@@ -17,10 +17,33 @@ const condition = ref<'NOVO' | 'USADO'>('USADO')
 const price = ref('')
 const pricingType = ref<'FIXO' | 'POR_HORA' | 'A_COMBINAR'>('FIXO')
 const showContact = ref(true)
+const status = ref('ATIVO')
 
 const categories = ref<Category[]>([])
 const submitting = ref(false)
 const errorMsg = ref('')
+
+const statusOptionsByModel: Record<string, { label: string, value: string }[]> = {
+  'VENDA': [
+    { label: 'Ativo', value: 'ATIVO' },
+    { label: 'Reservado', value: 'RESERVADO' },
+    { label: 'Vendido', value: 'VENDIDO_DOADO' },
+    { label: 'Inativo', value: 'INATIVO' },
+  ],
+  'DOACAO': [
+    { label: 'Ativo', value: 'ATIVO' },
+    { label: 'Reservado', value: 'RESERVADO' },
+    { label: 'Doado', value: 'VENDIDO_DOADO' },
+    { label: 'Inativo', value: 'INATIVO' },
+  ],
+  'SERVICO': [
+    { label: 'Ativo', value: 'ATIVO' },
+    { label: 'Concluído/Pausado', value: 'CONCLUIDO' },
+    { label: 'Inativo', value: 'INATIVO' },
+  ]
+}
+
+const currentStatusOptions = computed(() => statusOptionsByModel[type.value] || statusOptionsByModel['VENDA'])
 
 const filteredCategories = computed(() => {
   if (type.value === 'SERVICO') {
@@ -54,7 +77,8 @@ async function handleSubmit() {
       description: description.value,
       category_id: categoryId.value,
       type: type.value,
-      show_contact: showContact.value
+      show_contact: showContact.value,
+      status: status.value
     }
     
     if (type.value === 'VENDA') {
@@ -78,6 +102,17 @@ async function handleSubmit() {
   }
 }
 
+async function handleDelete() {
+  if (!confirm('Deseja realmente excluir este anúncio? Não é possível desfazer.')) return
+  try {
+    await listingsService.deleteListing(listingId)
+    router.replace('/me')
+  } catch (e) {
+    console.error(e)
+    alert('Erro ao excluir anúncio')
+  }
+}
+
 onMounted(async () => {
   categories.value = await listingsService.getCategories()
   
@@ -93,6 +128,7 @@ onMounted(async () => {
     title.value = data.title
     description.value = data.description
     showContact.value = data.show_contact
+    status.value = data.status || 'ATIVO'
     
     if (data.type === 'VENDA') {
       condition.value = data.condition || 'USADO'
@@ -148,6 +184,15 @@ onMounted(async () => {
             Serviço
           </button>
         </div>
+      </div>
+
+      <!-- Status -->
+      <div class="bg-gray-100 p-4 rounded-xl shadow-sm border border-gray-200">
+        <label class="block text-sm font-bold text-gray-900 mb-2">Status do Anúncio</label>
+        <select v-model="status" class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-green-500 focus:border-green-500 outline-none font-semibold text-gray-800">
+          <option v-for="opt in currentStatusOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+        </select>
+        <p class="text-xs text-gray-500 mt-2">Mude o status para pausar ou encerrar a exibição no aplicativo.</p>
       </div>
 
       <!-- Basic Info -->
@@ -231,14 +276,24 @@ onMounted(async () => {
         <p class="text-xs text-gray-400 mt-1">Para mudar as fotos, crie um novo anúncio.</p>
       </div>
 
-      <button 
-        type="submit" 
-        :disabled="submitting"
-        class="w-full bg-green-600 hover:bg-green-700 text-white font-extrabold text-lg py-3.5 px-4 rounded-xl shadow-lg transition-all active:scale-95 disabled:opacity-70 disabled:active:scale-100 mt-4"
-      >
-        <span v-if="submitting">Salvando...</span>
-        <span v-else>Salvar Alterações</span>
-      </button>
+      <div class="flex flex-col gap-3 mt-4">
+        <button 
+          type="submit" 
+          :disabled="submitting"
+          class="w-full bg-green-600 hover:bg-green-700 text-white font-extrabold text-lg py-3.5 px-4 rounded-xl shadow-lg transition-all active:scale-95 disabled:opacity-70 disabled:active:scale-100"
+        >
+          <span v-if="submitting">Salvando...</span>
+          <span v-else>Salvar Alterações</span>
+        </button>
+
+        <button 
+          type="button" 
+          @click="handleDelete"
+          class="w-full bg-white hover:bg-red-50 text-red-600 border border-red-200 font-bold text-base py-3 px-4 rounded-xl shadow-sm transition-all active:scale-95"
+        >
+          Excluir Anúncio
+        </button>
+      </div>
 
     </form>
   </div>

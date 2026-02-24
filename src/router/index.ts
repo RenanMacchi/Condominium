@@ -19,7 +19,8 @@ const router = createRouter({
 
 // Route Guard
 router.beforeEach(async (to, _from, next) => {
-    const { data: { session } } = await supabase.auth.getSession()
+    // using getUser instead of getSession ensures active token refresh if expired while app was minimized
+    const { data: { user } } = await supabase.auth.getUser()
 
     // Intercept Supabase Recovery Link (arrives as hash on root usually)
     if (to.hash.includes('type=recovery') && to.path !== '/reset-password') {
@@ -30,9 +31,9 @@ router.beforeEach(async (to, _from, next) => {
     // The plan was approved: reading listings restricted to logged-in users.
     const requiresAuth = to.meta.requiresAuth !== false && to.path !== '/login' && to.path !== '/reset-password'
 
-    if (requiresAuth && !session) {
+    if (requiresAuth && !user) {
         next('/login')
-    } else if (to.path === '/login' && session) {
+    } else if (to.path === '/login' && user) {
         next('/')
     } else {
         next()
