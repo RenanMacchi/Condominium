@@ -27,7 +27,8 @@ async function handleSetNewPassword() {
     
     if (error) throw error
     
-    alert('Senha atualizada com sucesso!')
+    alert('Senha atualizada com sucesso! Faça login com a nova senha.')
+    await supabase.auth.signOut()
     router.replace('/login')
   } catch (err: any) {
     errorMsg.value = err.message || 'Erro ao atualizar a senha'
