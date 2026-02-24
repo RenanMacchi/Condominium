@@ -2,7 +2,9 @@
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import { supabase } from '../lib/supabaseClient'
+import { useRouter } from 'vue-router'
 
+const router = useRouter()
 const authStore = useAuthStore()
 const displayName = ref('')
 const whatsapp = ref('')
@@ -43,6 +45,11 @@ async function saveProfile() {
   }
   saving.value = false
 }
+
+async function handleSignOut() {
+  await authStore.signOut()
+  router.push('/login')
+}
 </script>
 
 <template>
@@ -76,15 +83,15 @@ async function saveProfile() {
       <button 
         type="submit" 
         :disabled="saving"
-        class="w-full bg-primary-600 hover:bg-primary-700 text-white py-2 rounded-lg font-bold"
+        class="w-full bg-green-600 hover:bg-green-700 text-white font-extrabold text-lg py-3.5 px-4 rounded-xl shadow-lg transition-all active:scale-95 disabled:opacity-70 disabled:active:scale-100"
       >
         {{ saving ? 'Salvando...' : 'Salvar Alterações' }}
       </button>
       
       <button 
         type="button" 
-        @click="authStore.signOut()"
-        class="w-full bg-red-100 hover:bg-red-200 text-red-700 mt-4 py-2 rounded-lg font-bold"
+        @click="handleSignOut"
+        class="w-full bg-red-100 hover:bg-red-200 text-red-700 mt-4 py-3.5 rounded-xl font-bold transition-colors active:scale-95"
       >
         Sair da Conta
       </button>
