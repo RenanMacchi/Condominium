@@ -26,14 +26,12 @@ const errorMsg = ref('')
 const statusOptionsByModel: Record<string, { label: string, value: string }[]> = {
   'VENDA': [
     { label: 'Ativo', value: 'ATIVO' },
-    { label: 'Reservado', value: 'RESERVADO' },
-    { label: 'Vendido', value: 'VENDIDO_DOADO' },
+    { label: 'Concluído/Vendido', value: 'CONCLUIDO' },
     { label: 'Inativo', value: 'INATIVO' },
   ],
   'DOACAO': [
     { label: 'Ativo', value: 'ATIVO' },
-    { label: 'Reservado', value: 'RESERVADO' },
-    { label: 'Doado', value: 'VENDIDO_DOADO' },
+    { label: 'Concluído/Doado', value: 'CONCLUIDO' },
     { label: 'Inativo', value: 'INATIVO' },
   ],
   'SERVICO': [

@@ -48,14 +48,12 @@ async function deleteListing(id: string) {
 const statusOptionsByModel: Record<string, { label: string, value: string }[]> = {
   'VENDA': [
     { label: 'Ativo', value: 'ATIVO' },
-    { label: 'Reservado', value: 'RESERVADO' },
-    { label: 'Vendido', value: 'VENDIDO_DOADO' },
+    { label: 'Concluído/Vendido', value: 'CONCLUIDO' },
     { label: 'Inativo', value: 'INATIVO' },
   ],
   'DOACAO': [
     { label: 'Ativo', value: 'ATIVO' },
-    { label: 'Reservado', value: 'RESERVADO' },
-    { label: 'Doado', value: 'VENDIDO_DOADO' },
+    { label: 'Concluído/Doado', value: 'CONCLUIDO' },
     { label: 'Inativo', value: 'INATIVO' },
   ],
   'SERVICO': [
@@ -72,8 +70,6 @@ function getOptions(type: string) {
 function statusColor(status: string) {
   switch (status) {
     case 'ATIVO': return 'bg-green-100 text-green-800'
-    case 'RESERVADO': return 'bg-yellow-100 text-yellow-800'
-    case 'VENDIDO_DOADO':
     case 'CONCLUIDO': return 'bg-gray-100 text-gray-800'
     case 'INATIVO': return 'bg-red-100 text-red-800'
     default: return 'bg-gray-100 text-gray-800'
