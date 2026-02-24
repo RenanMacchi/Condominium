@@ -13,7 +13,6 @@ const tabs = [
   { label: 'Vendas', value: 'VENDA' },
   { label: 'Doações', value: 'DOACAO' },
   { label: 'Serviços', value: 'SERVICO' },
-  { label: 'Meus', value: 'MEUS' },
   { label: 'Concluídos', value: 'CONCLUIDOS' }
 ]
 
@@ -30,10 +29,7 @@ async function loadData() {
       categories.value = await listingsService.getCategories()
     }
     
-    if (currentTab.value === 'MEUS' && authStore.user) {
-      // Load user specific listings (bypassing active only filter)
-      listings.value = await listingsService.getMyListings(authStore.user.id)
-    } else if (currentTab.value === 'CONCLUIDOS') {
+    if (currentTab.value === 'CONCLUIDOS') {
       listings.value = await listingsService.getLatestActivListings(undefined, currentCategory.value || undefined, 'CONCLUIDO')
     } else {
       listings.value = await listingsService.getLatestActivListings(currentTab.value, currentCategory.value || undefined, 'ATIVO')
@@ -88,7 +84,7 @@ onUnmounted(() => {
     >
       <!-- Tabs -->
       <div class="px-2 pt-2 border-b border-gray-100 overflow-x-auto hide-scrollbar">
-        <div class="flex pb-2">
+        <div class="flex pb-2 items-center">
           <button 
             v-for="tab in tabs" 
             :key="tab.value"
@@ -98,6 +94,14 @@ onUnmounted(() => {
           >
             {{ tab.label }}
           </button>
+          
+          <RouterLink
+            v-if="authStore.user"
+            to="/me"
+            class="flex-shrink-0 ml-2 px-4 py-1.5 text-sm font-extrabold text-white bg-green-600 rounded-full shadow-sm hover:bg-green-700 transition-colors whitespace-nowrap"
+          >
+            Meus Anúncios
+          </RouterLink>
         </div>
       </div>
 

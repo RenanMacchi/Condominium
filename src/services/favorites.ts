@@ -56,9 +56,11 @@ export const favoritesService = {
         )
       `)
             .eq('user_id', userId)
+            .neq('listing.status', 'INATIVO') // only return listings that are not inactive
             .order('created_at', { ascending: false })
 
         if (error) throw error
-        return data.map((fav: any) => fav.listing)
+        // since we are filtering the joined table, Supabase might return null for `listing` if the condition fails. Let's filter those out too.
+        return data.map((fav: any) => fav.listing).filter(Boolean)
     }
 }
