@@ -43,7 +43,7 @@ const badgeColor = computed(() => {
 <template>
   <RouterLink :to="`/listing/${listing.id}`" class="block bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow active:scale-[0.98]">
     <div class="aspect-square w-full bg-gray-100 relative">
-      <img :src="coverPhoto" :alt="listing.title" class="w-full h-full object-cover" />
+      <img :src="coverPhoto" :alt="listing.title" class="w-full h-full object-cover transition-all" :class="{'grayscale opacity-50': listing.status === 'CONCLUIDO'}" />
       <div class="absolute top-2 left-2 px-2 py-1 rounded-md text-xs font-bold uppercase tracking-wider shadow-sm" :class="badgeColor">
         {{ listing.type }}
       </div>
@@ -59,15 +59,15 @@ const badgeColor = computed(() => {
       </button>
     </div>
     
-    <div class="p-3">
+    <div class="p-3" :class="{'opacity-60': listing.status === 'CONCLUIDO'}">
       <p v-if="listing.category?.name" class="text-xs text-gray-500 uppercase tracking-widest font-semibold mb-1">
         {{ listing.category.name }}
       </p>
-      <h3 class="font-semibold text-gray-900 leading-tight mb-2 line-clamp-2">
+      <h3 class="font-semibold text-gray-900 leading-tight mb-2 line-clamp-2" :class="{'line-through': listing.status === 'CONCLUIDO'}">
         {{ listing.title }}
       </h3>
       <div class="flex items-center justify-between">
-        <span class="font-extrabold text-green-600 text-lg tracking-tight">
+        <span class="font-extrabold text-lg tracking-tight" :class="listing.status === 'CONCLUIDO' ? 'text-gray-500' : 'text-green-600'">
           {{ formattedPrice }}
         </span>
         <span v-if="listing.condition" class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">

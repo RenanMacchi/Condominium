@@ -122,7 +122,7 @@ onMounted(() => {
 
     <div v-else class="pt-[60px] max-w-2xl mx-auto bg-white min-h-screen shadow-sm">
       <!-- Image Gallery -->
-      <div class="aspect-[4/3] bg-gray-100 relative group overflow-hidden">
+      <div class="aspect-[4/3] bg-gray-100 relative group overflow-hidden" :class="{'grayscale opacity-60': listing.status === 'CONCLUIDO'}">
         <template v-if="listing.photos && listing.photos.length > 0">
           <img 
             :src="listing.photos[currentImageIndex]?.url" 
@@ -176,11 +176,11 @@ onMounted(() => {
           </span>
         </div>
         
-        <h1 class="text-2xl font-black text-gray-900 mb-2 line-clamp-2 leading-tight">
+        <h1 class="text-2xl font-black text-gray-900 mb-2 line-clamp-2 leading-tight" :class="{'line-through': listing.status === 'CONCLUIDO'}">
           {{ listing.title }}
         </h1>
         
-        <div class="text-3xl font-extrabold text-green-600 mb-6 tracking-tight">
+        <div class="text-3xl font-extrabold mb-6 tracking-tight" :class="listing.status === 'CONCLUIDO' ? 'text-gray-500' : 'text-green-600'">
           {{ formattedPrice }}
         </div>
 
@@ -189,7 +189,14 @@ onMounted(() => {
         </div>
 
         <!-- Vendor Info -->
-        <div class="border border-gray-100 rounded-2xl p-4 flex items-center gap-4 bg-gray-50/50 mb-8" v-if="listing.owner && listing.show_contact !== false">
+        <div v-if="listing.status === 'CONCLUIDO'" class="border border-gray-100 rounded-2xl p-4 flex items-center justify-center gap-4 bg-gray-50/50 mb-8">
+          <div class="text-center">
+             <h3 class="font-bold text-gray-700">Anúncio Concluído</h3>
+             <p class="text-xs text-gray-500 mt-1">Este anúncio não está mais recebendo ofertas ou contatos.</p>
+          </div>
+        </div>
+        <template v-else>
+          <div class="border border-gray-100 rounded-2xl p-4 flex items-center gap-4 bg-gray-50/50 mb-8" v-if="listing.owner && listing.show_contact !== false">
           <div class="w-12 h-12 bg-gray-200 rounded-full flex-shrink-0 overflow-hidden flex items-center justify-center font-bold text-gray-500 text-lg">
             {{ listing.owner.avatar_url ? '' : (listing.owner.display_name?.charAt(0)?.toUpperCase() || 'U') }}
             <img v-if="listing.owner.avatar_url" :src="listing.owner.avatar_url" class="w-full h-full object-cover">
@@ -216,14 +223,21 @@ onMounted(() => {
             <h3 class="font-bold text-gray-900">Contato Oculto</h3>
             <p class="text-xs text-gray-500 mt-1">O anunciante optou por não exibir o contato.</p>
           </div>
-        </div>
-
+          </div>
+        </template>
       </div>
 
       <!-- Fixed bottom CTA -->
       <div class="fixed bottom-16 md:bottom-0 md:sticky md:mt-10 left-0 w-full bg-white border-t border-gray-200 p-4 pb-safe flex gap-3 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-20">
         <button 
-          v-if="listing.owner?.whatsapp && listing.show_contact !== false"
+          v-if="listing.status === 'CONCLUIDO'"
+          disabled
+          class="flex-1 bg-gray-200 text-gray-500 font-bold py-3.5 px-4 rounded-xl flex items-center justify-center transition-colors shadow-sm"
+        >
+          Anúncio Finalizado
+        </button>
+        <button 
+          v-else-if="listing.owner?.whatsapp && listing.show_contact !== false"
           @click="contactOwner"
           class="flex-1 bg-green-500 hover:bg-green-600 text-white font-bold py-3.5 px-4 rounded-xl flex items-center justify-center gap-2 transition-colors shadow-sm active:scale-95"
         >

@@ -15,7 +15,7 @@ export interface Listing {
     title: string
     description: string
     category_id: number
-    status: 'ATIVO' | 'RESERVADO' | 'VENDIDO_DOADO' | 'CONCLUIDO' | 'INATIVO'
+    status: 'ATIVO' | 'INATIVO' | 'CONCLUIDO'
     condition?: 'NOVO' | 'USADO'
     price_cents?: number
     pricing_type?: 'FIXO' | 'POR_HORA' | 'A_COMBINAR'
@@ -31,7 +31,7 @@ export const listingsService = {
         return data as Category[]
     },
 
-    async getLatestActivListings(typeFilter?: string, categoryId?: number) {
+    async getLatestActivListings(typeFilter?: string, categoryId?: number, statusFilter: string = 'ATIVO') {
         let query = supabase
             .from('listings')
             .select(`
@@ -39,7 +39,7 @@ export const listingsService = {
         photos:listing_photos(url),
         category:categories(name, icon)
       `)
-            .eq('status', 'ATIVO')
+            .eq('status', statusFilter)
             .order('created_at', { ascending: false })
             .limit(20)
 
@@ -189,9 +189,29 @@ export const listingsService = {
     },
 
     async deleteListing(id: string) {
-        // RLS handles the permissions, cascades will delete photos and favorites
-        // Storage files might be left orphaned for MVP, or we can delete them.
+        // 1. Fetch photos attached to listing
+        const { data: photos } = await supabase
+            .from('listing_photos')
+            .select('url')
+            .eq('listing_id', id)
+
+        // 2. Delete the listing from database (Cascades will handles the linked rows)
         const { error } = await supabase.from('listings').delete().eq('id', id)
         if (error) throw error
+
+        // 3. Remove physical files from Storage Bucket
+        if (photos && photos.length > 0) {
+            const filesToRemove = photos.map(p => {
+                // Extract 'listing-id/filename' from full URL
+                const urlParts = p.url.split('/')
+                const fileName = urlParts.pop()
+                const folderName = urlParts.pop()
+                return `${folderName}/${fileName}`
+            })
+
+            if (filesToRemove.length > 0) {
+                await supabase.storage.from('listing-photos').remove(filesToRemove)
+            }
+        }
     }
 }

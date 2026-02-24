@@ -1,0 +1,1 @@
+ALTER TABLE public.listings DROP CONSTRAINT IF EXISTS listings_status_check; ALTER TABLE public.listings ADD CONSTRAINT listings_status_check CHECK (status IN ('ATIVO', 'INATIVO', 'CONCLUIDO')); UPDATE public.listings SET status = 'CONCLUIDO' WHERE status IN ('RESERVADO', 'VENDIDO_DOADO'); 

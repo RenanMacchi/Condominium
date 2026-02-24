@@ -13,7 +13,8 @@ const tabs = [
   { label: 'Vendas', value: 'VENDA' },
   { label: 'Doações', value: 'DOACAO' },
   { label: 'Serviços', value: 'SERVICO' },
-  { label: 'Meus', value: 'MEUS' }
+  { label: 'Meus', value: 'MEUS' },
+  { label: 'Concluídos', value: 'CONCLUIDOS' }
 ]
 
 const currentTab = ref('')
@@ -32,8 +33,10 @@ async function loadData() {
     if (currentTab.value === 'MEUS' && authStore.user) {
       // Load user specific listings (bypassing active only filter)
       listings.value = await listingsService.getMyListings(authStore.user.id)
+    } else if (currentTab.value === 'CONCLUIDOS') {
+      listings.value = await listingsService.getLatestActivListings(undefined, currentCategory.value || undefined, 'CONCLUIDO')
     } else {
-      listings.value = await listingsService.getLatestActivListings(currentTab.value, currentCategory.value || undefined)
+      listings.value = await listingsService.getLatestActivListings(currentTab.value, currentCategory.value || undefined, 'ATIVO')
     }
   } catch (error) {
     console.error('Error loading listings', error)
@@ -84,13 +87,13 @@ onUnmounted(() => {
       :class="showFilters ? 'translate-y-0' : '-translate-y-full'"
     >
       <!-- Tabs -->
-      <div class="px-2 pt-2 border-b border-gray-100">
-        <div class="flex">
+      <div class="px-2 pt-2 border-b border-gray-100 overflow-x-auto hide-scrollbar">
+        <div class="flex pb-2">
           <button 
             v-for="tab in tabs" 
             :key="tab.value"
             @click="currentTab = tab.value"
-            class="flex-1 py-3 text-sm font-bold text-center border-b-2 transition-colors"
+            class="flex-shrink-0 px-4 py-2 text-sm font-bold text-center border-b-2 transition-colors whitespace-nowrap"
             :class="currentTab === tab.value ? 'border-green-600 text-green-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
           >
             {{ tab.label }}
