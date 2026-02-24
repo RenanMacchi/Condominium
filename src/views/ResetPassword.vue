@@ -7,6 +7,7 @@ const router = useRouter()
 const password = ref('')
 const loading = ref(false)
 const errorMsg = ref('')
+const success = ref(false)
 
 onMounted(async () => {
     // Check if we have the hash in the URL containing the access token
@@ -27,8 +28,8 @@ async function handleSetNewPassword() {
     
     if (error) throw error
     
-    alert('Senha atualizada com sucesso!')
-    router.push('/login')
+    await supabase.auth.signOut()
+    success.value = true
   } catch (err: any) {
     errorMsg.value = err.message || 'Erro ao atualizar a senha'
   } finally {
@@ -41,10 +42,20 @@ async function handleSetNewPassword() {
   <div class="h-screen flex items-center justify-center bg-gray-50 px-4">
     <div class="max-w-md w-full bg-white rounded-2xl shadow-xl overflow-hidden p-8">
       
-      <div class="text-center mb-8">
-        <h1 class="text-2xl font-extrabold text-green-600 mb-2">Redefinir Senha</h1>
-        <p class="text-gray-500">Digite sua nova senha abaixo</p>
+      <div v-if="success" class="text-center py-4">
+        <h2 class="text-3xl font-extrabold text-green-600 mb-4">Sucesso!</h2>
+        <p class="text-gray-700 mb-6 font-medium text-lg">Sua senha foi alterada com sucesso.</p>
+        <p class="text-sm text-gray-500 mb-4">Clique no link abaixo para efetuar o login:</p>
+        <a href="https://condominium-hazel.vercel.app/login" class="text-green-600 font-bold hover:underline break-all">
+          https://condominium-hazel.vercel.app/login
+        </a>
       </div>
+
+      <div v-else>
+        <div class="text-center mb-8">
+          <h1 class="text-2xl font-extrabold text-green-600 mb-2">Redefinir Senha</h1>
+          <p class="text-gray-500">Digite sua nova senha abaixo</p>
+        </div>
       
       <form @submit.prevent="handleSetNewPassword" class="space-y-5">
         <div v-if="errorMsg" class="p-3 bg-red-100 text-red-700 text-sm rounded-lg">
@@ -72,10 +83,11 @@ async function handleSetNewPassword() {
         </button>
       </form>
       
-      <div class="mt-6 text-center text-sm text-gray-600">
-        <button @click="router.push('/login')" class="text-green-600 font-semibold hover:underline">
-          Voltar para o login
-        </button>
+        <div class="mt-6 text-center text-sm text-gray-600">
+          <button @click="router.push('/login')" class="text-green-600 font-semibold hover:underline">
+            Voltar para o login
+          </button>
+        </div>
       </div>
       
     </div>
