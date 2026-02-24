@@ -61,13 +61,18 @@ export const listingsService = {
             .select(`
         *,
         photos:listing_photos(url, sort_order),
-        category:categories(name, icon),
+        category:categories!left(name, icon),
         owner:profiles!left(display_name, whatsapp, block, apartment, avatar_url)
       `)
             .eq('id', id)
-            .single()
+            .maybeSingle()
 
-        if (error) throw error
+        if (error) {
+            console.error("Supabase Error on getListingById:", error)
+            throw error
+        }
+        if (!data) throw new Error('PGRST116')
+
         return data as (Listing & { owner: any })
     },
 
