@@ -52,7 +52,7 @@ const badgeColor = computed(() => {
       <button 
         v-if="authStore.user && listing.owner_id === authStore.user.id"
         @click.prevent="router.push(`/edit/${listing.id}`)"
-        class="absolute top-2 right-2 p-2 bg-white/90 hover:bg-white text-primary-600 rounded-full shadow-sm backdrop-blur-sm transition-all active:scale-95 z-10"
+        class="absolute top-2 right-2 p-2 bg-white/90 hover:bg-white text-green-600 rounded-full shadow-sm backdrop-blur-sm transition-all active:scale-95 z-10"
         title="Editar Anúncio"
       >
         <Edit2 class="w-4 h-4" />
@@ -67,7 +67,7 @@ const badgeColor = computed(() => {
         {{ listing.title }}
       </h3>
       <div class="flex items-center justify-between">
-        <span class="font-extrabold text-primary-600 text-lg tracking-tight">
+        <span class="font-extrabold text-green-600 text-lg tracking-tight">
           {{ formattedPrice }}
         </span>
         <span v-if="listing.condition" class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">

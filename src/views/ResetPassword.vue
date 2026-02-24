@@ -68,7 +68,7 @@ async function handleSetNewPassword() {
             v-model="password" 
             type="password" 
             required 
-            class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition"
+            class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition"
             placeholder="••••••••"
           >
         </div>

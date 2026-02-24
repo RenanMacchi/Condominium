@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { listingsService, type Listing, type Category } from '../services/listings'
 import CategoryChips from '../components/CategoryChips.vue'
 import ListingCard from '../components/ListingCard.vue'
@@ -46,46 +46,72 @@ watch([currentTab, currentCategory], () => {
   loadData()
 })
 
+const showFilters = ref(true)
+let lastScrollY = 0
+
+function handleScroll() {
+  const currentScrollY = window.scrollY
+  if (currentScrollY <= 60) {
+    showFilters.value = true
+  } else if (currentScrollY > lastScrollY) {
+    showFilters.value = false // scrolling down
+  } else {
+    showFilters.value = true // scrolling up
+  }
+  lastScrollY = currentScrollY
+}
+
 onMounted(() => {
+  window.addEventListener('scroll', handleScroll, { passive: true })
   loadData()
+})
+
+onUnmounted(() => {
+  window.removeEventListener('scroll', handleScroll)
 })
 </script>
 
 <template>
   <div class="bg-gray-50 min-h-full">
     <!-- Header / Branding -->
-    <div class="px-4 py-4 bg-white border-b border-gray-100 flex justify-between items-center sticky top-0 z-10">
-      <h1 class="text-2xl font-black text-primary-600 tracking-tight">Condomínio Store</h1>
+    <div class="px-4 py-4 bg-white flex justify-between items-center text-center border-b border-gray-100">
+      <h1 class="text-2xl font-black text-green-600 tracking-tight w-full">Condomínio Store</h1>
     </div>
 
-    <!-- Tabs -->
-    <div class="bg-white px-2 pt-2 border-b border-gray-100">
-      <div class="flex">
-        <button 
-          v-for="tab in tabs" 
-          :key="tab.value"
-          @click="currentTab = tab.value"
-          class="flex-1 py-3 text-sm font-bold text-center border-b-2 transition-colors"
-          :class="currentTab === tab.value ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
-        >
-          {{ tab.label }}
-        </button>
+    <!-- Sticky Filters -->
+    <div 
+      class="sticky top-0 z-20 bg-white transition-transform duration-300 ease-in-out shadow-sm"
+      :class="showFilters ? 'translate-y-0' : '-translate-y-full'"
+    >
+      <!-- Tabs -->
+      <div class="px-2 pt-2 border-b border-gray-100">
+        <div class="flex">
+          <button 
+            v-for="tab in tabs" 
+            :key="tab.value"
+            @click="currentTab = tab.value"
+            class="flex-1 py-3 text-sm font-bold text-center border-b-2 transition-colors"
+            :class="currentTab === tab.value ? 'border-green-600 text-green-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
+          >
+            {{ tab.label }}
+          </button>
+        </div>
       </div>
-    </div>
 
-    <!-- Categories -->
-    <div class="bg-white pb-3 pt-2">
-      <CategoryChips 
-        :categories="categories" 
-        :selectedId="currentCategory" 
-        @select="(id) => currentCategory = id" 
-      />
+      <!-- Categories -->
+      <div class="pb-3 pt-2">
+        <CategoryChips 
+          :categories="categories" 
+          :selectedId="currentCategory" 
+          @select="(id) => currentCategory = id" 
+        />
+      </div>
     </div>
 
     <!-- Feed -->
     <div class="p-4">
       <div v-if="loading" class="flex justify-center py-10">
-        <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-primary-600"></div>
+        <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-green-600"></div>
       </div>
       
       <div v-else-if="listings.length === 0" class="text-center py-16 px-4">

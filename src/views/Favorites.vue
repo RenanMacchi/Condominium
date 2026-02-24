@@ -33,7 +33,7 @@ onMounted(() => {
     <h1 class="text-2xl font-bold text-gray-900 mb-6">Meus Favoritos</h1>
     
     <div v-if="loading" class="flex justify-center py-10">
-      <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-primary-600"></div>
+      <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-green-600"></div>
     </div>
     
     <div v-else-if="favorites.length === 0" class="text-center py-16 px-4 bg-white rounded-2xl shadow-sm">
@@ -42,7 +42,7 @@ onMounted(() => {
       </div>
       <h3 class="text-lg font-bold text-gray-900 mb-2">Sem favoritos ainda</h3>
       <p class="text-sm text-gray-500 mb-6">Você ainda não curtiu nenhum anúncio.</p>
-      <RouterLink to="/" class="bg-primary-50 text-primary-700 font-bold py-2 px-6 rounded-lg">
+      <RouterLink to="/" class="bg-green-50 text-green-700 font-bold py-2 px-6 rounded-lg">
         Explorar Anúncios
       </RouterLink>
     </div>

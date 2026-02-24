@@ -147,17 +147,17 @@ onMounted(async () => {
       <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 space-y-4">
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Título do Anúncio</label>
-          <input v-model="title" required maxlength="60" placeholder="Ex: Bicicleta Aro 29" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 outline-none" />
+          <input v-model="title" required maxlength="60" placeholder="Ex: Bicicleta Aro 29" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 outline-none" />
         </div>
         
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Descrição</label>
-          <textarea v-model="description" required rows="4" placeholder="Descreva os detalhes..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 outline-none resize-none"></textarea>
+          <textarea v-model="description" required rows="4" placeholder="Descreva os detalhes..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 outline-none resize-none"></textarea>
         </div>
         
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Categoria</label>
-          <select v-model="categoryId" required class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-primary-500 focus:border-primary-500 outline-none">
+          <select v-model="categoryId" required class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-green-500 focus:border-green-500 outline-none">
             <option :value="null" disabled>Selecione...</option>
             <option v-for="cat in filteredCategories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
           </select>
@@ -170,25 +170,25 @@ onMounted(async () => {
           <label class="block text-sm font-medium text-gray-700 mb-1">Condição</label>
           <div class="flex gap-4">
             <label class="flex items-center">
-              <input type="radio" v-model="condition" value="NOVO" class="text-primary-600 focus:ring-primary-500" />
+              <input type="radio" v-model="condition" value="NOVO" class="text-green-600 focus:ring-green-500" />
               <span class="ml-2">Novo</span>
             </label>
             <label class="flex items-center">
-              <input type="radio" v-model="condition" value="USADO" class="text-primary-600 focus:ring-primary-500" />
+              <input type="radio" v-model="condition" value="USADO" class="text-green-600 focus:ring-green-500" />
               <span class="ml-2">Usado</span>
             </label>
           </div>
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Preço (R$)</label>
-          <input v-model="price" type="number" step="0.01" min="0" required placeholder="0.00" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 outline-none" />
+          <input v-model="price" type="number" step="0.01" min="0" required placeholder="0.00" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 outline-none" />
         </div>
       </div>
 
       <div v-if="type === 'SERVICO'" class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 space-y-4">
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Forma de Cobrança</label>
-          <select v-model="pricingType" required class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-primary-500 focus:border-primary-500 outline-none">
+          <select v-model="pricingType" required class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-green-500 focus:border-green-500 outline-none">
             <option value="FIXO">Valor Fixo</option>
             <option value="POR_HORA">Por Hora</option>
             <option value="A_COMBINAR">A Combinar</option>
@@ -196,7 +196,7 @@ onMounted(async () => {
         </div>
         <div v-if="pricingType !== 'A_COMBINAR'">
           <label class="block text-sm font-medium text-gray-700 mb-1">Valor Referência (R$)</label>
-          <input v-model="price" type="number" step="0.01" min="0" placeholder="Opcional" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 outline-none" />
+          <input v-model="price" type="number" step="0.01" min="0" placeholder="Opcional" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 outline-none" />
         </div>
       </div>
 
@@ -230,7 +230,7 @@ onMounted(async () => {
             </button>
           </div>
           
-          <label v-if="files.length < 6" class="aspect-square rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-500 hover:border-primary-500 hover:text-primary-500 transition-colors cursor-pointer bg-gray-50 relative overflow-hidden">
+          <label v-if="files.length < 6" class="aspect-square rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-500 hover:border-green-500 hover:text-green-500 transition-colors cursor-pointer bg-gray-50 relative overflow-hidden">
             <UploadCloud class="w-6 h-6 mb-1" />
             <span class="text-xs font-medium">Add Foto</span>
             <input type="file" accept="image/*" multiple @change="handleFileSelect" class="absolute inset-0 opacity-0 cursor-pointer" />

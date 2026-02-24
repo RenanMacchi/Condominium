@@ -16,7 +16,7 @@ defineEmits<{
     <button 
       @click="$emit('select', null)"
       class="whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-colors"
-      :class="selectedId === null ? 'bg-primary-600 text-white shadow-md' : 'bg-white text-gray-700 border border-gray-200'"
+      :class="selectedId === null ? 'bg-green-600 text-white shadow-md' : 'bg-white text-gray-700 border border-gray-200'"
     >
       Todos
     </button>
@@ -25,7 +25,7 @@ defineEmits<{
       :key="cat.id"
       @click="$emit('select', cat.id)"
       class="whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-colors"
-      :class="selectedId === cat.id ? 'bg-primary-600 text-white shadow-md' : 'bg-white text-gray-700 border border-gray-200'"
+      :class="selectedId === cat.id ? 'bg-green-600 text-white shadow-md' : 'bg-white text-gray-700 border border-gray-200'"
     >
       {{ cat.name }}
     </button>

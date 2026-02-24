@@ -91,17 +91,17 @@ onMounted(() => {
   <div class="bg-gray-50 min-h-screen pb-20 md:pb-10">
     <div class="px-4 py-4 bg-white border-b border-gray-100 sticky top-0 z-10 flex items-center justify-between">
       <h1 class="text-xl font-bold text-gray-900">Meus Anúncios</h1>
-      <RouterLink to="/new" class="text-primary-600 font-bold text-sm bg-primary-50 px-3 py-1.5 rounded-lg">Novo</RouterLink>
+      <RouterLink to="/new" class="text-green-600 font-bold text-sm bg-green-50 px-3 py-1.5 rounded-lg">Novo</RouterLink>
     </div>
 
     <div v-if="loading" class="flex justify-center py-10">
-      <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-primary-600"></div>
+      <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-green-600"></div>
     </div>
     
     <div v-else-if="listings.length === 0" class="text-center py-16 px-4 bg-white m-4 rounded-2xl shadow-sm border border-gray-100">
       <h3 class="text-lg font-bold text-gray-900 mb-2">Você não tem anúncios</h3>
       <p class="text-sm text-gray-500 mb-6">Comece desapegando ou divulgando seus serviços pro condomínio!</p>
-      <RouterLink to="/new" class="bg-primary-600 hover:bg-primary-700 text-white font-bold py-3 px-6 rounded-xl shadow-sm">
+      <RouterLink to="/new" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-xl shadow-sm">
         Criar Primeiro Anúncio
       </RouterLink>
     </div>
@@ -128,7 +128,7 @@ onMounted(() => {
             <select 
               :value="listing.status" 
               @change="(e) => changeStatus(listing, (e.target as HTMLSelectElement).value)"
-              class="text-xs border border-gray-300 rounded px-2 py-1 flex-1 bg-gray-50 outline-none focus:border-primary-500"
+              class="text-xs border border-gray-300 rounded px-2 py-1 flex-1 bg-gray-50 outline-none focus:border-green-500"
             >
               <option v-for="opt in getOptions(listing.type)" :key="opt.value" :value="opt.value">
                 Mudar p/ {{ opt.label }}
@@ -139,7 +139,7 @@ onMounted(() => {
 
         <!-- Actions -->
         <div class="flex flex-col gap-2 items-end justify-between">
-          <button @click="router.push(`/edit/${listing.id}`)" class="p-2 text-gray-400 hover:text-primary-600 transition-colors bg-gray-50 hover:bg-primary-50 rounded-lg" title="Editar Anúncio">
+          <button @click="router.push(`/edit/${listing.id}`)" class="p-2 text-gray-400 hover:text-green-600 transition-colors bg-gray-50 hover:bg-green-50 rounded-lg" title="Editar Anúncio">
             <Edit2 class="w-4 h-4" />
           </button>
           <button @click="deleteListing(listing.id)" class="p-2 text-gray-400 hover:text-red-600 transition-colors bg-gray-50 hover:bg-red-50 rounded-lg" title="Excluir Anúncio">

@@ -110,7 +110,7 @@ onMounted(() => {
     </header>
 
     <div v-if="loading" class="pt-24 flex justify-center py-10">
-      <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-primary-600"></div>
+      <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-green-600"></div>
     </div>
     
     <div v-else-if="notFound || !listing" class="pt-24 text-center py-16 px-4">
@@ -168,7 +168,7 @@ onMounted(() => {
       <!-- Content -->
       <div class="p-5">
         <div class="flex items-center gap-2 mb-3">
-          <span v-if="listing.category" class="bg-primary-50 text-primary-700 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest flex items-center gap-1">
+          <span v-if="listing.category" class="bg-green-50 text-green-700 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest flex items-center gap-1">
             {{ listing.category.name }}
           </span>
           <span class="text-xs text-gray-500 font-medium">
@@ -180,7 +180,7 @@ onMounted(() => {
           {{ listing.title }}
         </h1>
         
-        <div class="text-3xl font-extrabold text-primary-600 mb-6 tracking-tight">
+        <div class="text-3xl font-extrabold text-green-600 mb-6 tracking-tight">
           {{ formattedPrice }}
         </div>
 

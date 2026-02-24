@@ -58,7 +58,7 @@ onMounted(async () => {
           <input 
             v-model="query" 
             type="search" 
-            class="block w-full pl-10 pr-3 py-3 border border-gray-200 rounded-xl leading-5 bg-gray-50 placeholder-gray-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
+            class="block w-full pl-10 pr-3 py-3 border border-gray-200 rounded-xl leading-5 bg-gray-50 placeholder-gray-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
             placeholder="Buscar produtos, serviços..." 
           />
         </div>
@@ -68,7 +68,7 @@ onMounted(async () => {
           class="p-3 bg-gray-100 hover:bg-gray-200 border-none text-gray-600 font-bold rounded-xl transition-colors relative"
         >
           <Filter class="w-5 h-5" />
-          <span v-if="selectedType || selectedCategory" class="absolute top-1 right-1 w-2.5 h-2.5 bg-primary-600 rounded-full border border-white"></span>
+          <span v-if="selectedType || selectedCategory" class="absolute top-1 right-1 w-2.5 h-2.5 bg-green-600 rounded-full border border-white"></span>
         </button>
       </form>
 
@@ -77,16 +77,16 @@ onMounted(async () => {
         <div>
           <label class="block text-xs font-bold text-gray-700 uppercase tracking-widest mb-2">Tipo</label>
           <div class="flex gap-2">
-            <button type="button" @click="selectedType = ''" :class="!selectedType ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700'" class="px-4 py-2 rounded-lg text-sm font-semibold transition-colors flex-1">Tudo</button>
-            <button type="button" @click="selectedType = 'VENDA'" :class="selectedType === 'VENDA' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700'" class="px-4 py-2 rounded-lg text-sm font-semibold transition-colors flex-1">Venda</button>
-            <button type="button" @click="selectedType = 'SERVICO'" :class="selectedType === 'SERVICO' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700'" class="px-4 py-2 rounded-lg text-sm font-semibold transition-colors flex-1">Serviços</button>
-            <button type="button" @click="selectedType = 'DOACAO'" :class="selectedType === 'DOACAO' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700'" class="px-4 py-2 rounded-lg text-sm font-semibold transition-colors flex-1">Doações</button>
+            <button type="button" @click="selectedType = ''" :class="!selectedType ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700'" class="px-4 py-2 rounded-lg text-sm font-semibold transition-colors flex-1">Tudo</button>
+            <button type="button" @click="selectedType = 'VENDA'" :class="selectedType === 'VENDA' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700'" class="px-4 py-2 rounded-lg text-sm font-semibold transition-colors flex-1">Venda</button>
+            <button type="button" @click="selectedType = 'SERVICO'" :class="selectedType === 'SERVICO' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700'" class="px-4 py-2 rounded-lg text-sm font-semibold transition-colors flex-1">Serviços</button>
+            <button type="button" @click="selectedType = 'DOACAO'" :class="selectedType === 'DOACAO' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700'" class="px-4 py-2 rounded-lg text-sm font-semibold transition-colors flex-1">Doações</button>
           </div>
         </div>
 
         <div>
           <label class="block text-xs font-bold text-gray-700 uppercase tracking-widest mb-2">Categoria</label>
-          <select v-model="selectedCategory" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-3 text-sm focus:outline-none focus:border-primary-500">
+          <select v-model="selectedCategory" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-3 text-sm focus:outline-none focus:border-green-500">
             <option :value="null">Todas as Categorias</option>
             <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
           </select>
@@ -94,7 +94,7 @@ onMounted(async () => {
 
         <div class="flex gap-2">
           <button @click="clearFilters" class="flex-1 py-3 text-sm font-bold text-gray-600 bg-gray-100 rounded-xl hover:bg-gray-200">Limpar</button>
-          <button @click="doSearch" class="flex-[2] py-3 text-sm font-bold text-white bg-primary-600 rounded-xl shadow-md hover:bg-primary-700">Aplicar Filtros</button>
+          <button @click="doSearch" class="flex-[2] py-3 text-sm font-bold text-white bg-green-600 rounded-xl shadow-md hover:bg-green-700">Aplicar Filtros</button>
         </div>
       </div>
     </div>
@@ -102,7 +102,7 @@ onMounted(async () => {
     <!-- Results Area -->
     <div class="p-4">
       <div v-if="loading" class="flex justify-center py-10">
-        <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-primary-600"></div>
+        <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-green-600"></div>
       </div>
       
       <div v-else-if="hasSearched && results.length === 0" class="text-center py-16 px-4">
@@ -111,7 +111,7 @@ onMounted(async () => {
         </div>
         <h3 class="text-lg font-bold text-gray-900 mb-2">Nenhum resultado</h3>
         <p class="text-sm text-gray-500 mb-6">Não encontramos nada para a sua busca ou filtros atuais.</p>
-        <button @click="clearFilters(); doSearch()" class="text-primary-600 font-bold hover:underline">Limpar busca</button>
+        <button @click="clearFilters(); doSearch()" class="text-green-600 font-bold hover:underline">Limpar busca</button>
       </div>
 
       <div v-else class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
