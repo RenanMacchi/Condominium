@@ -25,14 +25,32 @@ router.beforeEach(async (to, _from, next) => {
 
     // Ensure the app's auth state is loaded ONCE on hard refresh before evaluating any route.
     if (!authStore.initialized) {
-        await authStore.initialize()
+        try {
+            await Promise.race([
+                authStore.initialize(),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Init Timeout')), 5000))
+            ])
+        } catch (e) {
+            console.warn('Auth initialization timed out, forcing reload to clear locks');
+            window.location.reload();
+            return;
+        }
     }
 
     // Always use the store's user. If the store lost track (e.g. background tab), fallback to checking the local session synchronously.
     let user = authStore.user
     if (!user) {
-        const { data: { session } } = await supabase.auth.getSession()
-        user = session?.user || null
+        try {
+            const { data: { session } } = await Promise.race([
+                supabase.auth.getSession(),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Session Timeout')), 3000))
+            ]) as any
+            user = session?.user || null
+        } catch (e) {
+            console.warn('Auth session check timed out, forcing reload to clear locks');
+            window.location.reload();
+            return;
+        }
     }
 
     // Intercept Supabase Recovery Link (arrives as hash on root usually)
