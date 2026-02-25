@@ -3,9 +3,21 @@ import { ref } from 'vue'
 import { supabase } from '../lib/supabaseClient'
 import type { User } from '@supabase/supabase-js'
 
+export interface Profile {
+    id: string
+    display_name: string
+    apartment?: string
+    block?: string
+    whatsapp?: string
+    avatar_url?: string
+    house?: string
+    site?: string
+    is_admin: boolean
+}
+
 export const useAuthStore = defineStore('auth', () => {
     const user = ref<User | null>(null)
-    const profile = ref<any>(null)
+    const profile = ref<Profile | null>(null)
     const loading = ref(true)
 
     async function fetchProfile(userId: string) {
@@ -15,7 +27,7 @@ export const useAuthStore = defineStore('auth', () => {
             .eq('id', userId)
             .single()
         if (!error && data) {
-            profile.value = data
+            profile.value = data as Profile
         }
     }
 

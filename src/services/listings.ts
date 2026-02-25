@@ -21,6 +21,7 @@ export interface Listing {
     pricing_type?: 'FIXO' | 'POR_HORA' | 'A_COMBINAR'
     show_contact: boolean
     favorites_count?: number
+    report_count?: number
     photos?: { url: string }[]
     category?: Category
 }
@@ -41,6 +42,7 @@ export const listingsService = {
         category:categories(name, icon)
       `)
             .eq('status', statusFilter)
+            .lt('report_count', 10)
             .order('favorites_count', { ascending: false })
             .order('created_at', { ascending: false })
             .limit(20)
@@ -104,6 +106,7 @@ export const listingsService = {
                 category:categories(name, icon)
             `)
             .eq('status', 'ATIVO')
+            .lt('report_count', 10)
 
         if (queryText.trim()) {
             query = query.textSearch('search_tsv', queryText.trim(), { config: 'portuguese' })
@@ -215,5 +218,44 @@ export const listingsService = {
                 await supabase.storage.from('listing-photos').remove(filesToRemove)
             }
         }
+    },
+
+    async reportListing(listingId: string, userId: string, reason: string) {
+        const { error } = await supabase
+            .from('reports')
+            .insert({
+                listing_id: listingId,
+                user_id: userId,
+                reason: reason
+            })
+        if (error) throw error
+    },
+
+    async getReportedListings() {
+        // Only accessible by admins via RLS
+        const { data, error } = await supabase
+            .from('listings')
+            .select(`
+                *,
+                photos:listing_photos(url),
+                category:categories(name),
+                owner:profiles!owner_id(display_name),
+                reports:reports(reason, created_at)
+            `)
+            .gte('report_count', 1)
+            .order('report_count', { ascending: false })
+
+        if (error) throw error
+        return data as (Listing & { owner: any, reports: any[] })[]
+    },
+
+    async dismissReports(listingId: string) {
+        // Deltes the reports. The DB trigger will decrement the report_count back to 0.
+        const { error } = await supabase
+            .from('reports')
+            .delete()
+            .eq('listing_id', listingId)
+
+        if (error) throw error
     }
 }

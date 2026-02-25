@@ -13,7 +13,8 @@ const router = createRouter({
         { path: '/new', component: () => import('../views/NewListing.vue'), meta: { requiresAuth: true } },
         { path: '/me', component: () => import('../views/MyListings.vue'), meta: { requiresAuth: true } },
         { path: '/favorites', component: () => import('../views/Favorites.vue'), meta: { requiresAuth: true } },
-        { path: '/profile', component: () => import('../views/Profile.vue'), meta: { requiresAuth: true } }
+        { path: '/profile', component: () => import('../views/Profile.vue'), meta: { requiresAuth: true } },
+        { path: '/admin', component: () => import('../views/Admin.vue'), meta: { requiresAuth: true } }
     ]
 })
 

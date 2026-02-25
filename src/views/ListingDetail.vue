@@ -4,7 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { listingsService, type Listing } from '../services/listings'
 import { favoritesService } from '../services/favorites'
 import { useAuthStore } from '../stores/auth'
-import { ChevronLeft, ChevronRight, X, Heart, MessageCircle, MapPin } from 'lucide-vue-next'
+import { ChevronLeft, ChevronRight, X, Heart, MessageCircle, MapPin, AlertTriangle } from 'lucide-vue-next'
 
 const route = useRoute()
 const router = useRouter()
@@ -18,6 +18,17 @@ const togglingFavorite = ref(false)
 const currentImageIndex = ref(0)
 const notFound = ref(false)
 const showImageModal = ref(false)
+
+const showReportModal = ref(false)
+const reportingReason = ref('')
+const reporting = ref(false)
+
+const hasMultiplePhotos = computed(() => !!listing.value?.photos && listing.value.photos.length > 1)
+const photosLength = computed(() => listing.value?.photos?.length || 0)
+const activePhotoUrl = computed(() => {
+  if (!listing.value?.photos) return ''
+  return listing.value.photos[currentImageIndex.value]?.url || ''
+})
 
 function nextImage() {
   if (!listing.value || !listing.value.photos) return
@@ -74,6 +85,26 @@ function contactOwner() {
   window.open(`https://wa.me/55${number}?text=${text}`, '_blank')
 }
 
+async function submitReport() {
+  if (!authStore.user || !listing.value || !reportingReason.value.trim()) return
+  reporting.value = true
+  try {
+    await listingsService.reportListing(listing.value.id, authStore.user.id, reportingReason.value.trim())
+    alert('Denúncia enviada com sucesso ao síndico. Obrigado!')
+    showReportModal.value = false
+    reportingReason.value = ''
+  } catch(e: any) {
+    console.error(e)
+    if (e.code === '23505') { // Unique constraint violation
+       alert('Você já denunciou este anúncio.')
+    } else {
+       alert('Erro ao enviar denúncia.')
+    }
+  } finally {
+    reporting.value = false
+  }
+}
+
 const formattedPrice = computed(() => {
   if (!listing.value) return ''
   if (listing.value.type === 'DOACAO') return 'Doação'
@@ -97,16 +128,21 @@ onMounted(() => {
 <template>
   <div class="bg-gray-50 min-h-full pb-20 md:pb-0">
     <!-- Header -->
-    <header class="fixed top-0 w-full z-10 bg-white/80 backdrop-blur-md border-b border-gray-100 px-4 py-3 flex items-center justify-between">
-      <button @click="router.back()" class="p-2 -ml-2 rounded-full hover:bg-gray-100 transition-colors">
+    <header class="fixed top-0 w-full z-40 bg-white/80 backdrop-blur-md border-b border-gray-100 px-4 py-3 flex items-center justify-between">
+      <button @click="router.back()" class="p-2 -ml-2 rounded-full hover:bg-gray-100 transition-colors flex-shrink-0">
         <ChevronLeft class="w-6 h-6 text-gray-700" />
       </button>
-      <div class="font-bold text-gray-900 truncate px-4 flex-1 text-center">
+      <div class="font-bold text-gray-900 truncate px-2 flex-1 text-center">
         {{ listing?.title || 'Detalhes' }}
       </div>
-      <button @click="handleFavorite" :disabled="togglingFavorite" class="p-2 -mr-2 rounded-full hover:bg-gray-100 transition-colors disabled:opacity-50">
-        <Heart class="w-6 h-6 transition-colors" :class="isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-700'" />
-      </button>
+      <div class="flex items-center flex-shrink-0 -mr-2">
+        <button v-if="authStore.user && listing?.owner_id !== authStore.user.id" @click="showReportModal = true" class="p-2 rounded-full hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors" title="Reportar Anúncio">
+           <AlertTriangle class="w-5 h-5" />
+        </button>
+        <button @click="handleFavorite" :disabled="togglingFavorite" class="p-2 rounded-full hover:bg-gray-100 transition-colors disabled:opacity-50">
+          <Heart class="w-6 h-6 transition-colors" :class="isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-700'" />
+        </button>
+      </div>
     </header>
 
     <div v-if="loading" class="pt-24 flex justify-center py-10">
@@ -132,15 +168,15 @@ onMounted(() => {
           />
           
           <!-- Navigation Arrows -->
-          <button v-if="listing.photos.length > 1" @click.stop="prevImage" class="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/40 hover:bg-black/60 text-white rounded-full flex items-center justify-center backdrop-blur-sm transition-all opacity-0 group-hover:opacity-100 active:scale-95">
+          <button v-if="hasMultiplePhotos" @click.stop="prevImage" class="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/40 hover:bg-black/60 text-white rounded-full flex items-center justify-center backdrop-blur-sm transition-all opacity-0 group-hover:opacity-100 active:scale-95">
             <ChevronLeft class="w-6 h-6 -ml-1 text-white" />
           </button>
-          <button v-if="listing.photos.length > 1" @click.stop="nextImage" class="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/40 hover:bg-black/60 text-white rounded-full flex items-center justify-center backdrop-blur-sm transition-all opacity-0 group-hover:opacity-100 active:scale-95">
+          <button v-if="hasMultiplePhotos" @click.stop="nextImage" class="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/40 hover:bg-black/60 text-white rounded-full flex items-center justify-center backdrop-blur-sm transition-all opacity-0 group-hover:opacity-100 active:scale-95">
             <ChevronRight class="w-6 h-6 -mr-1 text-white" />
           </button>
 
           <!-- Dots -->
-          <div v-if="listing.photos.length > 1" class="absolute bottom-3 left-0 w-full flex justify-center gap-1.5 z-10">
+          <div v-if="hasMultiplePhotos" class="absolute bottom-3 left-0 w-full flex justify-center gap-1.5 z-10">
             <button 
               v-for="(_, idx) in listing.photos" 
               :key="idx" 
@@ -225,6 +261,7 @@ onMounted(() => {
           </div>
           </div>
         </template>
+        <!-- Removed Old Report Action from here -->
       </div>
 
       <!-- Fixed bottom CTA -->
@@ -261,27 +298,56 @@ onMounted(() => {
       </button>
       
       <!-- Modal Navigation -->
-      <button v-if="listing?.photos && listing.photos.length > 1" @click.stop="prevImage" class="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 p-3 bg-white/10 hover:bg-white/20 text-white rounded-full transition-all active:scale-95 z-[110]">
+      <button v-if="hasMultiplePhotos" @click.stop="prevImage" class="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 p-3 bg-white/10 hover:bg-white/20 text-white rounded-full transition-all active:scale-95 z-[110]">
         <ChevronLeft class="w-8 h-8 -ml-1 text-white" />
       </button>
-      <button v-if="listing?.photos && listing.photos.length > 1" @click.stop="nextImage" class="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 p-3 bg-white/10 hover:bg-white/20 text-white rounded-full transition-all active:scale-95 z-[110]">
+      <button v-if="hasMultiplePhotos" @click.stop="nextImage" class="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 p-3 bg-white/10 hover:bg-white/20 text-white rounded-full transition-all active:scale-95 z-[110]">
         <ChevronRight class="w-8 h-8 -mr-1 text-white" />
       </button>
 
       <!-- Main Image inside Modal -->
       <div class="w-full h-full p-4 md:p-12 flex items-center justify-center relative" @click="showImageModal = false">
         <img 
-          :src="listing?.photos?.[currentImageIndex]?.url" 
+          :src="activePhotoUrl" 
           class="max-w-full max-h-full object-contain select-none cursor-default"
           @click.stop
         />
       </div>
       
       <!-- Counter -->
-      <div v-if="listing?.photos && listing.photos.length > 1" class="absolute bottom-6 left-1/2 -translate-x-1/2 text-white font-medium bg-black/50 px-4 py-1.5 rounded-full backdrop-blur-md text-sm z-[110]">
-        {{ currentImageIndex + 1 }} / {{ listing.photos.length }}
+      <div v-if="hasMultiplePhotos" class="absolute bottom-6 left-1/2 -translate-x-1/2 text-white font-medium bg-black/50 px-4 py-1.5 rounded-full backdrop-blur-md text-sm z-[110]">
+        {{ currentImageIndex + 1 }} / {{ photosLength }}
       </div>
     </div>
+
+    <!-- Report Modal -->
+    <div v-if="showReportModal" class="fixed inset-0 z-50 flex items-center justify-center px-4 bg-gray-900/60 backdrop-blur-sm" @click.self="showReportModal = false">
+      <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden p-5 animate-in fade-in zoom-in duration-200">
+        <h3 class="text-lg font-black text-gray-900 mb-2 flex items-center gap-2">
+          <AlertTriangle class="w-5 h-5 text-red-500" /> Denunciar Anúncio
+        </h3>
+        <p class="text-sm text-gray-500 mb-4 leading-relaxed">
+          Tem certeza que deseja denunciar este anúncio para o síndico? Por favor, descreva o motivo brevemente.
+        </p>
+        
+        <textarea 
+          v-model="reportingReason" 
+          rows="3" 
+          class="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none mb-4 resize-none"
+          placeholder="Ex: Spam, Conteúdo Inadequado, Fraude..."
+        ></textarea>
+        
+        <div class="flex gap-2">
+          <button @click="showReportModal = false" class="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl transition-colors">
+            Cancelar
+          </button>
+          <button @click="submitReport" :disabled="reporting || !reportingReason.trim()" class="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition-colors shadow-sm disabled:opacity-50 flex justify-center items-center">
+             <span v-if="reporting" class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+             <span v-else>Denunciar</span>
+          </button>
+        </div>
+      </div>
     </div>
+    </div> <!-- Close main v-else block -->
   </div>
 </template>
