@@ -3,18 +3,24 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { listingsService, type Listing } from '../services/listings'
 import { useAuthStore } from '../stores/auth'
-import { ShieldAlert, Trash2, CheckCircle } from 'lucide-vue-next'
+import { ShieldAlert, Trash2, CheckCircle, Users, ShoppingBag, CheckSquare, UserX } from 'lucide-vue-next'
 
 const router = useRouter()
 const authStore = useAuthStore()
 
 const reportedListings = ref<(Listing & { owner: any, reports: any[] })[]>([])
+const analytics = ref<{ activeListings: number; completedListings: number; totalUsers: number } | null>(null)
 const loading = ref(true)
 
 async function loadData() {
   loading.value = true
   try {
-    reportedListings.value = await listingsService.getReportedListings()
+    const [listingsData, analyticsData] = await Promise.all([
+      listingsService.getReportedListings(),
+      listingsService.getAdminAnalytics()
+    ])
+    reportedListings.value = listingsData
+    analytics.value = analyticsData
   } catch (err: any) {
     console.error(err)
     if (err.code === 'PGRST116' || String(err).includes('policy')) {
@@ -37,15 +43,28 @@ async function dismiss(listingId: string) {
   }
 }
 
-async function ban(listingId: string) {
+async function banListing(listingId: string) {
   if (!confirm('Deseja excluir DEFINITIVAMENTE este anúncio e suas fotos? Esta ação não pode ser desfeita.')) return
   try {
     await listingsService.deleteListing(listingId)
     reportedListings.value = reportedListings.value.filter(l => l.id !== listingId)
-    alert('Anúncio banido com sucesso.')
+    alert('Anúncio excluído com sucesso.')
   } catch (e) {
     console.error(e)
-    alert('Erro ao banir anúncio')
+    alert('Erro ao excluir anúncio')
+  }
+}
+
+async function banResident(userId: string, userName: string) {
+  if (!confirm(`TEM CERTEZA ABSOLUTA que deseja BANIR o inquilino "${userName}"? Ele perderá acesso ao aplicativo imediatamente e não poderá mais logar.`)) return
+  try {
+    await listingsService.banUser(userId)
+    // Optional: Immediately remove all reported listings from this user from the screen
+    reportedListings.value = reportedListings.value.filter(l => l.owner_id !== userId)
+    alert(`O morador ${userName} foi banido com sucesso.`)
+  } catch (e) {
+    console.error(e)
+    alert('Erro ao banir usuário')
   }
 }
 
@@ -63,6 +82,25 @@ onMounted(() => {
     <div class="px-4 py-4 bg-red-600 text-white sticky top-0 z-10 flex items-center gap-2 shadow-md">
       <ShieldAlert class="w-6 h-6" />
       <h1 class="text-xl font-bold">Painel de Moderação</h1>
+    </div>
+
+    <!-- Analytics Dashboard -->
+    <div v-if="analytics" class="grid grid-cols-3 gap-2 px-4 py-4 bg-white border-b border-gray-200 shadow-sm mb-4">
+       <div class="bg-gray-50 rounded-xl p-3 text-center border border-gray-100 flex flex-col items-center justify-center">
+          <ShoppingBag class="w-5 h-5 text-indigo-500 mb-1" />
+          <span class="text-2xl font-black text-gray-900 leading-none">{{ analytics.activeListings }}</span>
+          <span class="text-[10px] text-gray-500 font-bold uppercase tracking-wider mt-1">Anúnc. Ativos</span>
+       </div>
+       <div class="bg-gray-50 rounded-xl p-3 text-center border border-gray-100 flex flex-col items-center justify-center">
+          <CheckSquare class="w-5 h-5 text-emerald-500 mb-1" />
+          <span class="text-2xl font-black text-gray-900 leading-none">{{ analytics.completedListings }}</span>
+          <span class="text-[10px] text-gray-500 font-bold uppercase tracking-wider mt-1">Negócios</span>
+       </div>
+       <div class="bg-gray-50 rounded-xl p-3 text-center border border-gray-100 flex flex-col items-center justify-center">
+          <Users class="w-5 h-5 text-blue-500 mb-1" />
+          <span class="text-2xl font-black text-gray-900 leading-none">{{ analytics.totalUsers }}</span>
+          <span class="text-[10px] text-gray-500 font-bold uppercase tracking-wider mt-1">Moradores</span>
+       </div>
     </div>
 
     <div v-if="loading" class="flex justify-center py-10">
@@ -118,14 +156,20 @@ onMounted(() => {
         </div>
 
         <!-- Footer Actions -->
-        <div class="p-3 bg-gray-50 border-t border-gray-100 flex gap-2">
-           <button @click="dismiss(listing.id)" class="flex-1 bg-white border border-gray-300 hover:bg-green-50 text-gray-700 hover:text-green-700 font-bold py-2 rounded-lg text-sm transition-colors shadow-sm">
+        <div class="p-3 bg-gray-50 border-t border-gray-100 flex flex-col gap-2">
+           <button @click="dismiss(listing.id)" class="w-full bg-white border border-gray-300 hover:bg-green-50 text-gray-700 hover:text-green-700 font-bold py-2 rounded-lg text-sm transition-colors shadow-sm">
              Perdoar Anúncio
            </button>
-           <button @click="ban(listing.id)" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg text-sm transition-colors shadow-sm flex items-center justify-center gap-1">
-             <Trash2 class="w-4 h-4" />
-             Banir 
-           </button>
+           <div class="flex gap-2">
+             <button @click="banListing(listing.id)" class="flex-1 bg-red-100 hover:bg-red-200 text-red-700 font-bold py-2 px-3 rounded-lg text-sm transition-colors shadow-sm flex items-center justify-center gap-1">
+               <Trash2 class="w-4 h-4" />
+               Excluir Anúncio 
+             </button>
+             <button @click="banResident(listing.owner_id, listing.owner?.display_name)" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-3 rounded-lg text-sm transition-colors shadow-sm flex items-center justify-center gap-1">
+               <UserX class="w-4 h-4" />
+               Banir Inquilino
+             </button>
+           </div>
         </div>
       </div>
     </div>

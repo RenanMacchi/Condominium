@@ -239,7 +239,7 @@ export const listingsService = {
                 *,
                 photos:listing_photos(url),
                 category:categories(name),
-                owner:profiles!owner_id(display_name),
+                owner:profiles!owner_id(id, display_name),
                 reports:reports(reason, created_at)
             `)
             .gte('report_count', 1)
@@ -257,5 +257,20 @@ export const listingsService = {
             .eq('listing_id', listingId)
 
         if (error) throw error
+    },
+
+    async banUser(userId: string) {
+        const { error } = await supabase
+            .from('profiles')
+            .update({ is_banned: true })
+            .eq('id', userId)
+
+        if (error) throw error
+    },
+
+    async getAdminAnalytics() {
+        const { data, error } = await supabase.rpc('get_admin_analytics')
+        if (error) throw error
+        return data as { activeListings: number; completedListings: number; totalUsers: number }
     }
 }

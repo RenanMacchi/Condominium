@@ -13,6 +13,7 @@ export interface Profile {
     house?: string
     site?: string
     is_admin: boolean
+    is_banned: boolean
 }
 
 export const useAuthStore = defineStore('auth', () => {
@@ -27,6 +28,15 @@ export const useAuthStore = defineStore('auth', () => {
             .eq('id', userId)
             .single()
         if (!error && data) {
+            if (data.is_banned) {
+                // If the user profile is marked as banned, force sign out.
+                await supabase.auth.signOut()
+                user.value = null
+                profile.value = null
+                alert('Sua conta foi banida pelo administrador. Acesso revogado.')
+                window.location.href = '/' // Force reload to trigger auth guards
+                return
+            }
             profile.value = data as Profile
         }
     }
