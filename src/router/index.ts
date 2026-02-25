@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { supabase } from '../lib/supabaseClient'
+import { useAuthStore } from '../stores/auth'
 
 const router = createRouter({
     history: createWebHistory(),
@@ -18,25 +18,17 @@ const router = createRouter({
     ]
 })
 
-let localSessionChecked = false
-let currentUser: any = null
-
-// Keep our local user object sync'd with Supabase without making network blocks on tab changes
-supabase.auth.onAuthStateChange((_event, session) => {
-    currentUser = session?.user || null
-})
-
 // Route Guard
 router.beforeEach(async (to, _from, next) => {
-    // Only query Supabase on the very first page hard-load. 
-    // Subsequent routing will use the synchronous currentUser variable, completely eliminating network hangs on tab switch!
-    if (!localSessionChecked) {
-        const { data: { session } } = await supabase.auth.getSession()
-        currentUser = session?.user || null
-        localSessionChecked = true
+    const authStore = useAuthStore()
+
+    // Ensure the app's auth state is loaded ONCE on hard refresh before evaluating any route.
+    // By using getSession internally, this won't hang the browser on tab wake-ups.
+    if (!authStore.initialized) {
+        await authStore.initialize()
     }
 
-    const user = currentUser
+    const user = authStore.user
 
     // Intercept Supabase Recovery Link (arrives as hash on root usually)
     if (to.hash.includes('type=recovery') && to.path !== '/reset-password') {

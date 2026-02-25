@@ -20,6 +20,7 @@ export const useAuthStore = defineStore('auth', () => {
     const user = ref<User | null>(null)
     const profile = ref<Profile | null>(null)
     const loading = ref(true)
+    const initialized = ref(false)
 
     async function fetchProfile(userId: string) {
         const { data, error } = await supabase
@@ -42,8 +43,13 @@ export const useAuthStore = defineStore('auth', () => {
     }
 
     async function initialize() {
+        if (initialized.value) return
         loading.value = true
-        const { data: { user: currentUser } } = await supabase.auth.getUser()
+
+        // Use getSession to load from local storage instantly, instead of network-dependent getUser()
+        const { data: { session } } = await supabase.auth.getSession()
+        const currentUser = session?.user
+
         if (currentUser) {
             user.value = currentUser
             await fetchProfile(currentUser.id)
@@ -59,6 +65,7 @@ export const useAuthStore = defineStore('auth', () => {
             }
         })
         loading.value = false
+        initialized.value = true
     }
 
     async function signOut() {
@@ -71,6 +78,7 @@ export const useAuthStore = defineStore('auth', () => {
         user,
         profile,
         loading,
+        initialized,
         initialize,
         signOut
     }

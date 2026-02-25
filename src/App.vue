@@ -8,7 +8,7 @@ const authStore = useAuthStore()
 const route = useRoute()
 
 onMounted(() => {
-  authStore.initialize()
+  // Initialization is now guaranteed by the Vue Router guard
 })
 </script>
 
