@@ -2,6 +2,7 @@
 import { onMounted } from 'vue'
 import { RouterView, useRoute } from 'vue-router'
 import { useAuthStore } from './stores/auth'
+import { supabase } from './lib/supabaseClient'
 import BottomNavigation from './components/BottomNavigation.vue'
 
 const authStore = useAuthStore()
@@ -9,6 +10,15 @@ const route = useRoute()
 
 onMounted(() => {
   // Initialization is now guaranteed by the Vue Router guard
+
+  // Aggressive protection against Supabase auth token lock freezes on mobile tab-wake
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      // Forcing a getSession call unblocks any suspended gotrue-js internal HTTP queues 
+      // preventing the infinite "silent failed fetch" bug you experienced.
+      supabase.auth.getSession().catch(console.error)
+    }
+  })
 })
 </script>
 

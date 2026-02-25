@@ -76,8 +76,11 @@ async function handleResetPassword() {
         </div>
         
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">E-mail</label>
+          <label for="email_input" class="block text-sm font-medium text-gray-700 mb-1">E-mail</label>
           <input 
+            id="email_input"
+            name="email"
+            autocomplete="email"
             v-model="email" 
             type="email" 
             required 
@@ -87,8 +90,11 @@ async function handleResetPassword() {
         </div>
         
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Senha</label>
+          <label for="password_input" class="block text-sm font-medium text-gray-700 mb-1">Senha</label>
           <input 
+            id="password_input"
+            name="password"
+            autocomplete="current-password"
             v-model="password" 
             type="password" 
             required 
