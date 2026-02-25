@@ -20,8 +20,10 @@ const router = createRouter({
 
 // Route Guard
 router.beforeEach(async (to, _from, next) => {
-    // using getUser instead of getSession ensures active token refresh if expired while app was minimized
-    const { data: { user } } = await supabase.auth.getUser()
+    // Use getSession() instead of getUser() to avoid network hanging on tab restore. 
+    // Supabase automatically refreshes tokens in the background via visibilitychange listeners.
+    const { data: { session } } = await supabase.auth.getSession()
+    const user = session?.user
 
     // Intercept Supabase Recovery Link (arrives as hash on root usually)
     if (to.hash.includes('type=recovery') && to.path !== '/reset-password') {
