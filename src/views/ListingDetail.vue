@@ -98,7 +98,7 @@ async function submitReport() {
     if (e.code === '23505') { // Unique constraint violation
        alert('Você já denunciou este anúncio.')
     } else {
-       alert('Erro ao enviar denúncia.')
+       alert(`Erro ao enviar denúncia. Detalhes: ${e.message || 'Desconhecido'} (Código: ${e.code || 'N/A'})`)
     }
   } finally {
     reporting.value = false
