@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import { supabase } from '../lib/supabaseClient'
 
 const router = createRouter({
     history: createWebHistory(),
@@ -23,29 +24,32 @@ router.beforeEach(async (to, _from, next) => {
     const authStore = useAuthStore()
 
     // Ensure the app's auth state is loaded ONCE on hard refresh before evaluating any route.
-    // By using getSession internally, this won't hang the browser on tab wake-ups.
     if (!authStore.initialized) {
         await authStore.initialize()
     }
 
-    const user = authStore.user
+    // Always use the store's user. If the store lost track (e.g. background tab), fallback to checking the local session synchronously.
+    let user = authStore.user
+    if (!user) {
+        const { data: { session } } = await supabase.auth.getSession()
+        user = session?.user || null
+    }
 
     // Intercept Supabase Recovery Link (arrives as hash on root usually)
     if (to.hash.includes('type=recovery') && to.path !== '/reset-password') {
         return next({ path: '/reset-password', hash: to.hash })
     }
 
-    // MVP rule: "Apenas usuários logados podem ver/interagir com listagens" or public can see.
-    // The plan was approved: reading listings restricted to logged-in users.
+    // MVP rule: "Apenas usuários logados podem ver/interagir com listagens"
     const requiresAuth = to.meta.requiresAuth !== false && to.path !== '/login' && to.path !== '/reset-password'
 
     if (requiresAuth && !user) {
-        next('/login')
+        return next('/login')
     } else if (to.path === '/login' && user) {
-        next('/')
-    } else {
-        next()
+        return next('/')
     }
+
+    return next()
 })
 
 export default router
