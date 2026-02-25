@@ -46,26 +46,34 @@ export const useAuthStore = defineStore('auth', () => {
         if (initialized.value) return
         loading.value = true
 
-        // Use getUser() to guarantee a fresh, verified session from the server on the initial app load.
-        // Since we decoupled the Vue Router, this will ONLY ever run once per session, avoiding any tab-switch hanging.
-        const { data: { user: currentUser } } = await supabase.auth.getUser()
+        try {
+            // Use getUser() to guarantee a fresh, verified session from the server on the initial app load.
+            const { data: { user: currentUser } } = await supabase.auth.getUser()
 
-        if (currentUser) {
-            user.value = currentUser
-            await fetchProfile(currentUser.id)
+            if (currentUser) {
+                user.value = currentUser
+                await fetchProfile(currentUser.id)
+            }
+        } catch (error) {
+            console.error('Fatal auth initialization error:', error)
+        } finally {
+            loading.value = false
+            initialized.value = true
         }
 
         supabase.auth.onAuthStateChange(async (_event, session) => {
             if (session?.user) {
                 user.value = session.user
-                await fetchProfile(session.user.id)
+                try {
+                    await fetchProfile(session.user.id)
+                } catch (e) {
+                    console.error('Failed to fetch profile aggressively:', e)
+                }
             } else {
                 user.value = null
                 profile.value = null
             }
         })
-        loading.value = false
-        initialized.value = true
     }
 
     async function signOut() {
