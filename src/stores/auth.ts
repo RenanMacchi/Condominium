@@ -46,9 +46,9 @@ export const useAuthStore = defineStore('auth', () => {
         if (initialized.value) return
         loading.value = true
 
-        // Use getSession to load from local storage instantly, instead of network-dependent getUser()
-        const { data: { session } } = await supabase.auth.getSession()
-        const currentUser = session?.user
+        // Use getUser() to guarantee a fresh, verified session from the server on the initial app load.
+        // Since we decoupled the Vue Router, this will ONLY ever run once per session, avoiding any tab-switch hanging.
+        const { data: { user: currentUser } } = await supabase.auth.getUser()
 
         if (currentUser) {
             user.value = currentUser
