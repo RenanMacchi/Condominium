@@ -18,12 +18,25 @@ const router = createRouter({
     ]
 })
 
+let localSessionChecked = false
+let currentUser: any = null
+
+// Keep our local user object sync'd with Supabase without making network blocks on tab changes
+supabase.auth.onAuthStateChange((_event, session) => {
+    currentUser = session?.user || null
+})
+
 // Route Guard
 router.beforeEach(async (to, _from, next) => {
-    // Use getSession() instead of getUser() to avoid network hanging on tab restore. 
-    // Supabase automatically refreshes tokens in the background via visibilitychange listeners.
-    const { data: { session } } = await supabase.auth.getSession()
-    const user = session?.user
+    // Only query Supabase on the very first page hard-load. 
+    // Subsequent routing will use the synchronous currentUser variable, completely eliminating network hangs on tab switch!
+    if (!localSessionChecked) {
+        const { data: { session } } = await supabase.auth.getSession()
+        currentUser = session?.user || null
+        localSessionChecked = true
+    }
+
+    const user = currentUser
 
     // Intercept Supabase Recovery Link (arrives as hash on root usually)
     if (to.hash.includes('type=recovery') && to.path !== '/reset-password') {
