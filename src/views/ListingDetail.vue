@@ -5,10 +5,15 @@ import { listingsService, type Listing } from '../services/listings'
 import { favoritesService } from '../services/favorites'
 import { useAuthStore } from '../stores/auth'
 import { ChevronLeft, ChevronRight, X, Heart, MessageCircle, MapPin, AlertTriangle } from 'lucide-vue-next'
+import { useVisibilityRefetch } from '../composables/useVisibilityRefetch'
 
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
+
+useVisibilityRefetch(() => {
+  loadListing()
+})
 
 const id = route.params.id as string
 const listing = ref<(Listing & { owner: any }) | null>(null)

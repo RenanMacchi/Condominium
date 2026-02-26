@@ -3,11 +3,18 @@ import { ref, onMounted } from 'vue'
 import { listingsService, type Listing } from '../services/listings'
 import { useAuthStore } from '../stores/auth'
 import { Trash2, Edit2 } from 'lucide-vue-next'
+import { useVisibilityRefetch } from '../composables/useVisibilityRefetch'
 
 import { useRouter } from 'vue-router'
 
 const authStore = useAuthStore()
 const router = useRouter()
+
+useVisibilityRefetch(() => {
+  if (authStore.user) {
+    loadMyListings()
+  }
+})
 const listings = ref<Listing[]>([])
 const loading = ref(true)
 

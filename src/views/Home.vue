@@ -3,10 +3,15 @@ import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { listingsService, type Listing, type Category } from '../services/listings'
 import CategoryChips from '../components/CategoryChips.vue'
 import ListingCard from '../components/ListingCard.vue'
+import { useVisibilityRefetch } from '../composables/useVisibilityRefetch'
 
 import { useAuthStore } from '../stores/auth'
 
 const authStore = useAuthStore()
+
+useVisibilityRefetch(() => {
+  loadData()
+})
 
 const tabs = [
   { label: 'Tudo', value: '' },

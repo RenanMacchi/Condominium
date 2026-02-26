@@ -3,10 +3,17 @@ import { ref, onMounted } from 'vue'
 import { listingsService, type Listing, type Category } from '../services/listings'
 import ListingCard from '../components/ListingCard.vue'
 import { Search as SearchIcon, Filter } from 'lucide-vue-next'
+import { useVisibilityRefetch } from '../composables/useVisibilityRefetch'
 
 const query = ref('')
 const selectedType = ref('')
 const selectedCategory = ref<number | null>(null)
+
+useVisibilityRefetch(() => {
+  if (hasSearched.value || query.value) {
+    doSearch()
+  }
+})
 
 const categories = ref<Category[]>([])
 const results = ref<Listing[]>([])

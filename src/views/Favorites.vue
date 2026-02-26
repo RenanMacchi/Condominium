@@ -4,8 +4,15 @@ import { favoritesService } from '../services/favorites'
 import { useAuthStore } from '../stores/auth'
 import type { Listing } from '../services/listings'
 import ListingCard from '../components/ListingCard.vue'
+import { useVisibilityRefetch } from '../composables/useVisibilityRefetch'
 
 const authStore = useAuthStore()
+
+useVisibilityRefetch(() => {
+  if (authStore.user) {
+    loadFavorites()
+  }
+})
 const favorites = ref<Listing[]>([])
 const loading = ref(true)
 

@@ -4,9 +4,16 @@ import { useRouter } from 'vue-router'
 import { listingsService, type Listing } from '../services/listings'
 import { useAuthStore } from '../stores/auth'
 import { ShieldAlert, Trash2, CheckCircle, Users, ShoppingBag, CheckSquare, UserX } from 'lucide-vue-next'
+import { useVisibilityRefetch } from '../composables/useVisibilityRefetch'
 
 const router = useRouter()
 const authStore = useAuthStore()
+
+useVisibilityRefetch(() => {
+  if (authStore.profile?.is_admin) {
+    loadData()
+  }
+})
 
 const reportedListings = ref<(Listing & { owner: any, reports: any[] })[]>([])
 const analytics = ref<{ activeListings: number; completedListings: number; totalUsers: number } | null>(null)
