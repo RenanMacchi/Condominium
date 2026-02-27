@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useAuth } from '../composables/useAuth'
 import { supabase } from '../lib/supabaseClient'
+import { ShieldAlert } from 'lucide-vue-next'
 
 const auth = useAuth()
 const displayName = ref('')
@@ -90,6 +91,15 @@ async function handleSignOut() {
       >
         {{ saving ? 'Salvando...' : 'Salvar Alterações' }}
       </button>
+
+      <router-link
+        v-if="auth.profile.value?.is_admin"
+        to="/admin"
+        class="flex items-center justify-center gap-2 w-full bg-red-600 hover:bg-red-700 text-white font-extrabold text-lg mt-4 py-3.5 px-4 rounded-xl shadow-lg transition-all active:scale-95"
+      >
+        <ShieldAlert class="w-5 h-5" />
+        Painel de Moderação
+      </router-link>
       
       <button 
         type="button" 
