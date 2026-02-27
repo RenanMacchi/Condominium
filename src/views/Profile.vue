@@ -1,11 +1,9 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useAuthStore } from '../stores/auth'
+import { useAuth } from '../composables/useAuth'
 import { supabase } from '../lib/supabaseClient'
-import { useRouter } from 'vue-router'
 
-const router = useRouter()
-const authStore = useAuthStore()
+const auth = useAuth()
 const displayName = ref('')
 const whatsapp = ref('')
 const site = ref('')
@@ -14,16 +12,16 @@ const saving = ref(false)
 const msg = ref('')
 
 onMounted(() => {
-  if (authStore.profile) {
-    displayName.value = authStore.profile.display_name || ''
-    whatsapp.value = authStore.profile.whatsapp || ''
-    site.value = authStore.profile.site || ''
-    house.value = authStore.profile.house || ''
+  if (auth.profile.value) {
+    displayName.value = auth.profile.value.display_name || ''
+    whatsapp.value = auth.profile.value.whatsapp || ''
+    site.value = auth.profile.value.site || ''
+    house.value = auth.profile.value.house || ''
   }
 })
 
 async function saveProfile() {
-  if (!authStore.user) return
+  if (!auth.user.value) return
   saving.value = true
   msg.value = ''
   
@@ -35,20 +33,25 @@ async function saveProfile() {
       site: site.value,
       house: house.value,
     })
-    .eq('id', authStore.user.id)
+    .eq('id', auth.user.value.id)
     
   if (error) {
     msg.value = 'Erro ao salvar: ' + error.message
   } else {
     msg.value = 'Perfil atualizado com sucesso!'
-    await authStore.initialize() // refresh profile context
+    // update local state
+    if (auth.profile.value) {
+      auth.profile.value.display_name = displayName.value
+      auth.profile.value.whatsapp = whatsapp.value
+      auth.profile.value.site = site.value
+      auth.profile.value.house = house.value
+    }
   }
   saving.value = false
 }
 
 async function handleSignOut() {
-  await authStore.signOut()
-  router.push('/login')
+  await auth.signOut()
 }
 </script>
 

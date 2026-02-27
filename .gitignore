@@ -24,3 +24,4 @@ dist-ssr
 *.sw?
 .env  
 .env.* 
+PLANO_REFATORACAO_CONDOMINIUM.md

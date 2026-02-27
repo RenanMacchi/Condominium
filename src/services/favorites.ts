@@ -1,7 +1,8 @@
 import { supabase } from '../lib/supabaseClient'
+import type { Listing } from '../types'
 
 export const favoritesService = {
-    async toggleFavorite(userId: string, listingId: string) {
+    async toggleFavorite(userId: string, listingId: string): Promise<boolean> {
         const { data: existing, error: checkError } = await supabase
             .from('favorites')
             .select('*')
@@ -32,7 +33,7 @@ export const favoritesService = {
         }
     },
 
-    async isFavorited(userId: string, listingId: string) {
+    async isFavorited(userId: string, listingId: string): Promise<boolean> {
         const { data, error } = await supabase
             .from('favorites')
             .select('listing_id')
@@ -44,7 +45,7 @@ export const favoritesService = {
         return !!data
     },
 
-    async getMyFavorites(userId: string) {
+    async getMyFavorites(userId: string): Promise<Listing[]> {
         const { data, error } = await supabase
             .from('favorites')
             .select(`
@@ -61,6 +62,6 @@ export const favoritesService = {
 
         if (error) throw error
         // since we are filtering the joined table, Supabase might return null for `listing` if the condition fails. Let's filter those out too.
-        return data.map((fav: any) => fav.listing).filter(Boolean)
+        return data.map((fav: any) => fav.listing).filter(Boolean) as Listing[]
     }
 }

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { listingsService, type Listing, type Category } from '../services/listings'
+import { listingsService } from '../services/listings'
+import type { Listing, Category } from '../types'
 import ListingCard from '../components/ListingCard.vue'
 import { Search as SearchIcon, Filter } from 'lucide-vue-next'
 import { useVisibilityRefetch } from '../composables/useVisibilityRefetch'

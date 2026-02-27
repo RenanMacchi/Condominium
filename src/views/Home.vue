@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch } from 'vue'
-import { listingsService, type Listing, type Category } from '../services/listings'
+import { listingsService } from '../services/listings'
+import type { Listing, Category } from '../types'
 import CategoryChips from '../components/CategoryChips.vue'
 import ListingCard from '../components/ListingCard.vue'
 import { useVisibilityRefetch } from '../composables/useVisibilityRefetch'
 
-import { useAuthStore } from '../stores/auth'
+import { useAuth } from '../composables/useAuth'
 
-const authStore = useAuthStore()
+const auth = useAuth()
 
 useVisibilityRefetch(() => {
   loadData()
@@ -53,16 +54,23 @@ watch([currentTab, currentCategory], () => {
 const showFilters = ref(true)
 let lastScrollY = 0
 
+let ticking = false
 function handleScroll() {
-  const currentScrollY = window.scrollY
-  if (currentScrollY <= 60) {
-    showFilters.value = true
-  } else if (currentScrollY > lastScrollY) {
-    showFilters.value = false // scrolling down
-  } else {
-    showFilters.value = true // scrolling up
+  if (!ticking) {
+    window.requestAnimationFrame(() => {
+      const currentScrollY = window.scrollY
+      if (currentScrollY <= 60) {
+        showFilters.value = true
+      } else if (currentScrollY > lastScrollY) {
+        showFilters.value = false // scrolling down
+      } else {
+        showFilters.value = true // scrolling up
+      }
+      lastScrollY = currentScrollY
+      ticking = false
+    })
+    ticking = true
   }
-  lastScrollY = currentScrollY
 }
 
 onMounted(() => {
@@ -91,7 +99,7 @@ onUnmounted(() => {
       <div class="px-2 pt-2 border-b border-gray-100 overflow-x-auto hide-scrollbar">
         <div class="flex pb-2 items-center">
           <RouterLink
-            v-if="authStore.user"
+            v-if="auth.user.value"
             to="/me"
             class="flex-shrink-0 mr-2 px-4 py-1.5 text-sm font-extrabold text-white bg-green-600 rounded-full shadow-sm hover:bg-green-700 transition-colors whitespace-nowrap"
           >

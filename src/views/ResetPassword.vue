@@ -8,6 +8,7 @@ const password = ref('')
 const loading = ref(false)
 const errorMsg = ref('')
 const success = ref(false)
+const loginUrl = window.location.origin + '/login'
 
 onMounted(async () => {
     // Check if we have the hash in the URL containing the access token
@@ -46,8 +47,8 @@ async function handleSetNewPassword() {
         <h2 class="text-3xl font-extrabold text-green-600 mb-4">Sucesso!</h2>
         <p class="text-gray-700 mb-6 font-medium text-lg">Sua senha foi alterada com sucesso.</p>
         <p class="text-sm text-gray-500 mb-4">Clique no link abaixo para efetuar o login:</p>
-        <a href="https://condominium-hazel.vercel.app/login" class="text-green-600 font-bold hover:underline break-all">
-          https://condominium-hazel.vercel.app/login
+        <a :href="loginUrl" class="text-green-600 font-bold hover:underline break-all">
+          {{ loginUrl }}
         </a>
       </div>
 

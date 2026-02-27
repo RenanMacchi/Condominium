@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { Listing } from '../services/listings'
-import { useAuthStore } from '../stores/auth'
+import type { Listing } from '../types'
+import { formatPrice } from '../utils/format'
+import { useAuth } from '../composables/useAuth'
 import { Edit2, Heart } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 
-const authStore = useAuthStore()
+const auth = useAuth()
 const router = useRouter()
 
 const props = defineProps<{
@@ -13,17 +14,8 @@ const props = defineProps<{
 }>()
 
 const formattedPrice = computed(() => {
-  if (props.listing.type === 'DOACAO') return 'Doação'
-  if (props.listing.type === 'SERVICO') {
-    if (props.listing.pricing_type === 'A_COMBINAR') return 'A combinar'
-    if (!props.listing.price_cents) return 'Sob consulta'
-    const value = (props.listing.price_cents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-    return props.listing.pricing_type === 'POR_HORA' ? `${value}/h` : value
-  }
-  if (props.listing.price_cents) {
-    return (props.listing.price_cents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-  }
-  return ''
+  if (!props.listing.price_cents && props.listing.type === 'SERVICO' && props.listing.pricing_type !== 'A_COMBINAR') return 'Sob consulta'
+  return formatPrice(props.listing)
 })
 
 const coverPhoto = computed(() => {
@@ -56,7 +48,7 @@ const badgeColor = computed(() => {
       
       <!-- Edit Button overlay if Owner -->
       <button 
-        v-if="authStore.user && listing.owner_id === authStore.user.id"
+        v-if="auth.user.value && listing.owner_id === auth.user.value.id"
         @click.prevent="router.push(`/edit/${listing.id}`)"
         class="absolute top-2 right-2 p-2 bg-white/90 hover:bg-white text-green-600 rounded-full shadow-sm backdrop-blur-sm transition-all active:scale-95 z-10"
         title="Editar Anúncio"

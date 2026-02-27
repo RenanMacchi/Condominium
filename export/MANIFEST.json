@@ -1,0 +1,208 @@
+{
+  "root": "Condominium",
+  "mode": "full",
+  "commit": "c158d53",
+  "generated_at": "2026-02-27T03:20:56.097945+00:00",
+  "filters": {},
+  "summary": {
+    "total_files": 32,
+    "excluded_files": 0,
+    "total_bytes": 109569,
+    "total_lines": 2933,
+    "estimated_tokens": 27392
+  },
+  "files": [
+    {
+      "path": "index.html",
+      "lang": "html",
+      "bytes": 333,
+      "lines": 14
+    },
+    {
+      "path": "package.json",
+      "lang": "json",
+      "bytes": 720,
+      "lines": 32
+    },
+    {
+      "path": "postcss.config.js",
+      "lang": "javascript",
+      "bytes": 103,
+      "lines": 7
+    },
+    {
+      "path": "src/App.vue",
+      "lang": "vue",
+      "bytes": 1577,
+      "lines": 45
+    },
+    {
+      "path": "src/components/BottomNavigation.vue",
+      "lang": "vue",
+      "bytes": 1244,
+      "lines": 39
+    },
+    {
+      "path": "src/components/CategoryChips.vue",
+      "lang": "vue",
+      "bytes": 1139,
+      "lines": 44
+    },
+    {
+      "path": "src/components/ListingCard.vue",
+      "lang": "vue",
+      "bytes": 3707,
+      "lines": 86
+    },
+    {
+      "path": "src/composables/useVisibilityRefetch.ts",
+      "lang": "typescript",
+      "bytes": 1783,
+      "lines": 56
+    },
+    {
+      "path": "src/lib/supabaseClient.ts",
+      "lang": "typescript",
+      "bytes": 1598,
+      "lines": 46
+    },
+    {
+      "path": "src/main.ts",
+      "lang": "typescript",
+      "bytes": 254,
+      "lines": 14
+    },
+    {
+      "path": "src/router/index.ts",
+      "lang": "typescript",
+      "bytes": 3211,
+      "lines": 74
+    },
+    {
+      "path": "src/services/favorites.ts",
+      "lang": "typescript",
+      "bytes": 2251,
+      "lines": 67
+    },
+    {
+      "path": "src/services/listings.ts",
+      "lang": "typescript",
+      "bytes": 8511,
+      "lines": 277
+    },
+    {
+      "path": "src/stores/auth.ts",
+      "lang": "typescript",
+      "bytes": 2706,
+      "lines": 94
+    },
+    {
+      "path": "src/style.css",
+      "lang": "css",
+      "bytes": 197,
+      "lines": 10
+    },
+    {
+      "path": "src/views/Admin.vue",
+      "lang": "vue",
+      "bytes": 8679,
+      "lines": 185
+    },
+    {
+      "path": "src/views/EditListing.vue",
+      "lang": "vue",
+      "bytes": 12203,
+      "lines": 299
+    },
+    {
+      "path": "src/views/Favorites.vue",
+      "lang": "vue",
+      "bytes": 2117,
+      "lines": 73
+    },
+    {
+      "path": "src/views/Home.vue",
+      "lang": "vue",
+      "bytes": 4689,
+      "lines": 150
+    },
+    {
+      "path": "src/views/ListingDetail.vue",
+      "lang": "vue",
+      "bytes": 16897,
+      "lines": 359
+    },
+    {
+      "path": "src/views/Login.vue",
+      "lang": "vue",
+      "bytes": 4362,
+      "lines": 131
+    },
+    {
+      "path": "src/views/MyListings.vue",
+      "lang": "vue",
+      "bytes": 5816,
+      "lines": 156
+    },
+    {
+      "path": "src/views/NewListing.vue",
+      "lang": "vue",
+      "bytes": 11113,
+      "lines": 253
+    },
+    {
+      "path": "src/views/Profile.vue",
+      "lang": "vue",
+      "bytes": 3242,
+      "lines": 101
+    },
+    {
+      "path": "src/views/ResetPassword.vue",
+      "lang": "vue",
+      "bytes": 3269,
+      "lines": 96
+    },
+    {
+      "path": "src/views/Search.vue",
+      "lang": "vue",
+      "bytes": 5998,
+      "lines": 134
+    },
+    {
+      "path": "tailwind.config.js",
+      "lang": "javascript",
+      "bytes": 373,
+      "lines": 22
+    },
+    {
+      "path": "tsconfig.app.json",
+      "lang": "json",
+      "bytes": 454,
+      "lines": 17
+    },
+    {
+      "path": "tsconfig.json",
+      "lang": "json",
+      "bytes": 119,
+      "lines": 8
+    },
+    {
+      "path": "tsconfig.node.json",
+      "lang": "json",
+      "bytes": 653,
+      "lines": 27
+    },
+    {
+      "path": "vercel.json",
+      "lang": "json",
+      "bytes": 96,
+      "lines": 9
+    },
+    {
+      "path": "vite.config.ts",
+      "lang": "typescript",
+      "bytes": 155,
+      "lines": 8
+    }
+  ]
+}

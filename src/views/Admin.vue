@@ -1,21 +1,23 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { listingsService, type Listing } from '../services/listings'
-import { useAuthStore } from '../stores/auth'
+import { listingsService } from '../services/listings'
+import type { ListingWithOwner } from '../types'
+import { useAuth } from '../composables/useAuth'
 import { ShieldAlert, Trash2, CheckCircle, Users, ShoppingBag, CheckSquare, UserX } from 'lucide-vue-next'
 import { useVisibilityRefetch } from '../composables/useVisibilityRefetch'
+import { toast } from 'vue-sonner'
 
 const router = useRouter()
-const authStore = useAuthStore()
+const auth = useAuth()
 
 useVisibilityRefetch(() => {
-  if (authStore.profile?.is_admin) {
+  if (auth.profile.value?.is_admin) {
     loadData()
   }
 })
 
-const reportedListings = ref<(Listing & { owner: any, reports: any[] })[]>([])
+const reportedListings = ref<ListingWithOwner[]>([])
 const analytics = ref<{ activeListings: number; completedListings: number; totalUsers: number } | null>(null)
 const loading = ref(true)
 
@@ -31,7 +33,7 @@ async function loadData() {
   } catch (err: any) {
     console.error(err)
     if (err.code === 'PGRST116' || String(err).includes('policy')) {
-      alert('Acesso negado. Apenas administradores podem ver esta página.')
+      toast.error('Acesso negado. Apenas administradores podem ver esta página.')
       router.replace('/')
     }
   } finally {
@@ -44,9 +46,10 @@ async function dismiss(listingId: string) {
   try {
     await listingsService.dismissReports(listingId)
     reportedListings.value = reportedListings.value.filter(l => l.id !== listingId)
+    toast.success('Anúncio perdoado com sucesso')
   } catch (e) {
     console.error(e)
-    alert('Erro ao perdoar denúncias')
+    toast.error('Erro ao perdoar denúncias')
   }
 }
 
@@ -55,10 +58,10 @@ async function banListing(listingId: string) {
   try {
     await listingsService.deleteListing(listingId)
     reportedListings.value = reportedListings.value.filter(l => l.id !== listingId)
-    alert('Anúncio excluído com sucesso.')
+    toast.success('Anúncio excluído com sucesso.')
   } catch (e) {
     console.error(e)
-    alert('Erro ao excluir anúncio')
+    toast.error('Erro ao excluir anúncio')
   }
 }
 
@@ -68,15 +71,15 @@ async function banResident(userId: string, userName: string) {
     await listingsService.banUser(userId)
     // Optional: Immediately remove all reported listings from this user from the screen
     reportedListings.value = reportedListings.value.filter(l => l.owner_id !== userId)
-    alert(`O morador ${userName} foi banido com sucesso.`)
+    toast.success(`O morador ${userName} foi banido com sucesso.`)
   } catch (e) {
     console.error(e)
-    alert('Erro ao banir usuário')
+    toast.error('Erro ao banir usuário')
   }
 }
 
 onMounted(() => {
-  if (!authStore.profile?.is_admin) {
+  if (!auth.profile.value?.is_admin) {
     router.replace('/')
     return
   }
@@ -155,8 +158,8 @@ onMounted(() => {
             <div class="mt-3">
               <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Motivos Recentes:</p>
               <ul class="text-xs text-gray-700 bg-gray-50 rounded p-2 italic space-y-1">
-                 <li v-for="(rep, idx) in listing.reports.slice(0, 3)" :key="idx">- "{{ rep.reason }}"</li>
-                 <li v-if="listing.reports.length > 3" class="text-[10px] text-gray-400 font-bold ml-1">... e mais {{ listing.reports.length - 3 }}</li>
+                 <li v-for="(rep, idx) in (listing.reports || []).slice(0, 3)" :key="idx">- "{{ rep.reason }}"</li>
+                 <li v-if="(listing.reports || []).length > 3" class="text-[10px] text-gray-400 font-bold ml-1">... e mais {{ listing.reports!.length - 3 }}</li>
               </ul>
             </div>
           </div>
@@ -172,7 +175,7 @@ onMounted(() => {
                <Trash2 class="w-4 h-4" />
                Excluir Anúncio 
              </button>
-             <button @click="banResident(listing.owner_id, listing.owner?.display_name)" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-3 rounded-lg text-sm transition-colors shadow-sm flex items-center justify-center gap-1">
+             <button @click="banResident(listing.owner_id, listing.owner?.display_name || 'Desconhecido')" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-3 rounded-lg text-sm transition-colors shadow-sm flex items-center justify-center gap-1">
                <UserX class="w-4 h-4" />
                Banir Inquilino
              </button>

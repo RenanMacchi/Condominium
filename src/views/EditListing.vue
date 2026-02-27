@@ -1,13 +1,15 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { useAuthStore } from '../stores/auth'
-import { listingsService, type Category } from '../services/listings'
+import { useAuth } from '../composables/useAuth'
+import { listingsService } from '../services/listings'
+import type { Category, ListingType, ListingStatus, ListingCondition, PricingType, UpdateListingPayload } from '../types'
+import { getStatusOptions } from '../utils/format'
 
 const router = useRouter()
 const route = useRoute()
-const authStore = useAuthStore()
-const listingId = route.params.id as string
+const auth = useAuth()
+const listingId = computed(() => route.params.id as string)
 
 const type = ref<'VENDA' | 'DOACAO' | 'SERVICO'>('VENDA')
 const categoryId = ref<number | null>(null)
@@ -23,25 +25,7 @@ const categories = ref<Category[]>([])
 const submitting = ref(false)
 const errorMsg = ref('')
 
-const statusOptionsByModel: Record<string, { label: string, value: string }[]> = {
-  'VENDA': [
-    { label: 'Ativo', value: 'ATIVO' },
-    { label: 'Concluído/Vendido', value: 'CONCLUIDO' },
-    { label: 'Inativo', value: 'INATIVO' },
-  ],
-  'DOACAO': [
-    { label: 'Ativo', value: 'ATIVO' },
-    { label: 'Concluído/Doado', value: 'CONCLUIDO' },
-    { label: 'Inativo', value: 'INATIVO' },
-  ],
-  'SERVICO': [
-    { label: 'Ativo', value: 'ATIVO' },
-    { label: 'Concluído/Pausado', value: 'CONCLUIDO' },
-    { label: 'Inativo', value: 'INATIVO' },
-  ]
-}
-
-const currentStatusOptions = computed(() => statusOptionsByModel[type.value] || statusOptionsByModel['VENDA'])
+const currentStatusOptions = computed(() => getStatusOptions(type.value))
 
 const filteredCategories = computed(() => {
   if (type.value === 'SERVICO') {
@@ -53,7 +37,7 @@ const filteredCategories = computed(() => {
 // Photos locked for MVP editing
 
 async function handleSubmit() {
-  if (!authStore.user) return
+  if (!auth.user.value) return
   
   if (!categoryId.value) {
     errorMsg.value = 'Selecione uma categoria'
@@ -69,28 +53,35 @@ async function handleSubmit() {
   submitting.value = true
   
   try {
-    const payload: any = {
-      owner_id: authStore.user.id,
+    const payload: UpdateListingPayload = {
       title: title.value,
       description: description.value,
       category_id: categoryId.value,
-      type: type.value,
+      type: type.value as ListingType,
       show_contact: showContact.value,
-      status: status.value
+      status: status.value as ListingStatus
     }
     
     if (type.value === 'VENDA') {
       // transform "100.50" string or 100.5 number to cents safely
       payload.price_cents = Math.round(parseFloat(String(price.value).replace(',', '.')) * 100)
-      payload.condition = condition.value
+      payload.condition = condition.value as ListingCondition
+      payload.pricing_type = null
     } else if (type.value === 'SERVICO') {
-      payload.pricing_type = pricingType.value
+      payload.pricing_type = pricingType.value as PricingType
+      payload.condition = null
       if (pricingType.value !== 'A_COMBINAR' && price.value) {
         payload.price_cents = Math.round(parseFloat(String(price.value).replace(',', '.')) * 100)
+      } else {
+        payload.price_cents = null
       }
+    } else if (type.value === 'DOACAO') {
+      payload.price_cents = null
+      payload.condition = null
+      payload.pricing_type = null
     }
     
-    const updated = await listingsService.updateListing(listingId, payload)
+    const updated = await listingsService.updateListing(listingId.value, payload)
     router.replace(`/listing/${updated.id}`)
   } catch (err: any) {
     console.error(err)
@@ -103,7 +94,7 @@ async function handleSubmit() {
 async function handleDelete() {
   if (!confirm('Deseja realmente excluir este anúncio? Não é possível desfazer.')) return
   try {
-    await listingsService.deleteListing(listingId)
+    await listingsService.deleteListing(listingId.value)
     router.replace('/me')
   } catch (e) {
     console.error(e)
@@ -116,8 +107,8 @@ onMounted(async () => {
   
   // Load existing data
   try {
-    const data = await listingsService.getListingById(listingId)
-    if (data.owner_id !== authStore.user?.id) {
+    const data = await listingsService.getListingById(listingId.value)
+    if (data.owner_id !== auth.user.value?.id) {
       router.push('/me')
       return
     }

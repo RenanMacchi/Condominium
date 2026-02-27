@@ -1,22 +1,24 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { listingsService, type Listing } from '../services/listings'
+import { listingsService } from '../services/listings'
+import type { ListingWithOwner } from '../types'
 import { favoritesService } from '../services/favorites'
-import { useAuthStore } from '../stores/auth'
+import { useAuth } from '../composables/useAuth'
 import { ChevronLeft, ChevronRight, X, Heart, MessageCircle, MapPin, AlertTriangle } from 'lucide-vue-next'
 import { useVisibilityRefetch } from '../composables/useVisibilityRefetch'
+import { toast } from 'vue-sonner'
 
 const route = useRoute()
 const router = useRouter()
-const authStore = useAuthStore()
+const auth = useAuth()
 
 useVisibilityRefetch(() => {
   loadListing()
 })
 
-const id = route.params.id as string
-const listing = ref<(Listing & { owner: any }) | null>(null)
+const id = computed(() => route.params.id as string)
+const listing = ref<ListingWithOwner | null>(null)
 const loading = ref(true)
 const isFavorite = ref(false)
 const togglingFavorite = ref(false)
@@ -54,10 +56,10 @@ function openModal() {
 async function loadListing() {
   loading.value = true
   try {
-    const data = await listingsService.getListingById(id)
+    const data = await listingsService.getListingById(id.value)
     listing.value = data
-    if (authStore.user) {
-      isFavorite.value = await favoritesService.isFavorited(authStore.user.id, id)
+    if (auth.user.value) {
+      isFavorite.value = await favoritesService.isFavorited(auth.user.value.id, id.value)
     }
   } catch (error: any) {
     if (error.code === 'PGRST116') {
@@ -71,10 +73,10 @@ async function loadListing() {
 }
 
 async function handleFavorite() {
-  if (!authStore.user || !listing.value) return
+  if (!auth.user.value || !listing.value) return
   togglingFavorite.value = true
   try {
-    const newState = await favoritesService.toggleFavorite(authStore.user.id, listing.value.id)
+    const newState = await favoritesService.toggleFavorite(auth.user.value.id, listing.value.id)
     isFavorite.value = newState
   } catch (err) {
     console.error(err)
@@ -91,19 +93,19 @@ function contactOwner() {
 }
 
 async function submitReport() {
-  if (!authStore.user || !listing.value || !reportingReason.value.trim()) return
+  if (!auth.user.value || !listing.value || !reportingReason.value.trim()) return
   reporting.value = true
   try {
-    await listingsService.reportListing(listing.value.id, authStore.user.id, reportingReason.value.trim())
-    alert('Denúncia enviada com sucesso ao síndico. Obrigado!')
+    await listingsService.reportListing(listing.value.id, auth.user.value.id, reportingReason.value.trim())
+    toast.success('Denúncia enviada com sucesso ao síndico. Obrigado!')
     showReportModal.value = false
     reportingReason.value = ''
   } catch(e: any) {
     console.error(e)
     if (e.code === '23505') { // Unique constraint violation
-       alert('Você já denunciou este anúncio.')
+       toast.error('Você já denunciou este anúncio.')
     } else {
-       alert(`Erro ao enviar denúncia. Detalhes: ${e.message || 'Desconhecido'} (Código: ${e.code || 'N/A'})`)
+       toast.error(`Erro ao enviar denúncia. Detalhes: ${e.message || 'Desconhecido'} (Código: ${e.code || 'N/A'})`)
     }
   } finally {
     reporting.value = false
@@ -141,7 +143,7 @@ onMounted(() => {
         {{ listing?.title || 'Detalhes' }}
       </div>
       <div class="flex items-center flex-shrink-0 -mr-2">
-        <button v-if="authStore.user && listing?.owner_id !== authStore.user.id" @click="showReportModal = true" class="p-2 rounded-full hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors" title="Reportar Anúncio">
+        <button v-if="auth.user.value && listing?.owner_id !== auth.user.value.id" @click="showReportModal = true" class="p-2 rounded-full hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors" title="Reportar Anúncio">
            <AlertTriangle class="w-5 h-5" />
         </button>
         <button @click="handleFavorite" :disabled="togglingFavorite" class="p-2 rounded-full hover:bg-gray-100 transition-colors disabled:opacity-50">

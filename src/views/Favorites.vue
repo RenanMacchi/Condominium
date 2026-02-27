@@ -1,26 +1,28 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { favoritesService } from '../services/favorites'
-import { useAuthStore } from '../stores/auth'
-import type { Listing } from '../services/listings'
+import { useAuth } from '../composables/useAuth'
+import type { Listing } from '../types'
 import ListingCard from '../components/ListingCard.vue'
 import { useVisibilityRefetch } from '../composables/useVisibilityRefetch'
+import { Heart } from 'lucide-vue-next'
 
-const authStore = useAuthStore()
+const auth = useAuth()
 
 useVisibilityRefetch(() => {
-  if (authStore.user) {
+  if (auth.user.value) {
     loadFavorites()
   }
 })
+
 const favorites = ref<Listing[]>([])
 const loading = ref(true)
 
 async function loadFavorites() {
-  if (!authStore.user) return
+  if (!auth.user.value) return
   loading.value = true
   try {
-    favorites.value = await favoritesService.getMyFavorites(authStore.user.id)
+    favorites.value = await favoritesService.getMyFavorites(auth.user.value.id)
   } catch (err) {
     console.error(err)
   } finally {
@@ -29,7 +31,7 @@ async function loadFavorites() {
 }
 
 onMounted(() => {
-  if (authStore.user) {
+  if (auth.user.value) {
     loadFavorites()
   }
 })
@@ -64,9 +66,3 @@ onMounted(() => {
   </div>
 </template>
 
-<script lang="ts">
-import { Heart } from 'lucide-vue-next'
-export default {
-  components: { Heart }
-}
-</script>

@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { supabase } from '../lib/supabaseClient'
+import { toast } from 'vue-sonner'
 
 const router = useRouter()
 const email = ref('')
@@ -21,7 +22,7 @@ async function handleSubmit() {
         password: password.value,
       })
       if (error) throw error
-      alert('Conta criada com sucesso!')
+      toast.success('Conta criada com sucesso!')
       router.push('/')
     } else {
       const { error } = await supabase.auth.signInWithPassword({
@@ -50,7 +51,7 @@ async function handleResetPassword() {
       redirectTo: window.location.origin + '/reset-password',
     })
     if (error) throw error
-    alert('As instruções para redefinir sua senha foram enviadas para o seu e-mail!')
+    toast.success('As instruções para redefinir sua senha foram enviadas para o seu e-mail!')
   } catch (err: any) {
     errorMsg.value = err.message || 'Erro ao solicitar redefinição'
   } finally {

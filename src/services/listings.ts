@@ -1,39 +1,14 @@
 import { supabase } from '../lib/supabaseClient'
-
-export interface Category {
-    id: number
-    name: string
-    category_group: 'PRODUTO' | 'SERVICO' | 'GERAL'
-    icon: string | null
-}
-
-export interface Listing {
-    id: string
-    created_at: string
-    owner_id: string
-    type: 'VENDA' | 'DOACAO' | 'SERVICO'
-    title: string
-    description: string
-    category_id: number
-    status: 'ATIVO' | 'INATIVO' | 'CONCLUIDO'
-    condition?: 'NOVO' | 'USADO'
-    price_cents?: number
-    pricing_type?: 'FIXO' | 'POR_HORA' | 'A_COMBINAR'
-    show_contact: boolean
-    favorites_count?: number
-    report_count?: number
-    photos?: { url: string }[]
-    category?: Category
-}
+import type { Category, Listing, ListingWithOwner, CreateListingPayload, UpdateListingPayload } from '../types'
 
 export const listingsService = {
-    async getCategories() {
+    async getCategories(): Promise<Category[]> {
         const { data, error } = await supabase.from('categories').select('*').order('name')
         if (error) throw error
         return data as Category[]
     },
 
-    async getLatestActivListings(typeFilter?: string, categoryId?: number, statusFilter: string = 'ATIVO') {
+    async getLatestActivListings(typeFilter?: string, categoryId?: number, statusFilter: string = 'ATIVO'): Promise<Listing[]> {
         let query = supabase
             .from('listings')
             .select(`
@@ -57,11 +32,10 @@ export const listingsService = {
         const { data, error } = await query
         if (error) throw error
 
-        // Formatting data so photos are an array of objects
         return data as Listing[]
     },
 
-    async getListingById(id: string) {
+    async getListingById(id: string): Promise<ListingWithOwner> {
         const { data, error } = await supabase
             .from('listings')
             .select(`
@@ -79,10 +53,10 @@ export const listingsService = {
         }
         if (!data) throw new Error('PGRST116')
 
-        return data as (Listing & { owner: any })
+        return data as unknown as ListingWithOwner
     },
 
-    async getMyListings(userId: string) {
+    async getMyListings(userId: string): Promise<Listing[]> {
         const { data, error } = await supabase
             .from('listings')
             .select(`
@@ -97,7 +71,7 @@ export const listingsService = {
         return data as Listing[]
     },
 
-    async searchListings(queryText: string, searchParams?: { type?: string, category_id?: number }) {
+    async searchListings(queryText: string, searchParams?: { type?: string, category_id?: number }): Promise<Listing[]> {
         let query = supabase
             .from('listings')
             .select(`
@@ -126,7 +100,7 @@ export const listingsService = {
         return data as Listing[]
     },
 
-    async createListing(listingData: any, files: File[]) {
+    async createListing(listingData: CreateListingPayload, files: File[]): Promise<Listing> {
         // 1. Insert listing
         const { data: newListing, error: listingError } = await supabase
             .from('listings')
@@ -169,10 +143,10 @@ export const listingsService = {
             }
         }
 
-        return newListing
+        return newListing as Listing
     },
 
-    async updateListing(id: string, listingData: any) {
+    async updateListing(id: string, listingData: UpdateListingPayload): Promise<Listing> {
         const { data, error } = await supabase
             .from('listings')
             .update(listingData)
@@ -181,10 +155,10 @@ export const listingsService = {
             .single()
 
         if (error) throw error
-        return data
+        return data as Listing
     },
 
-    async updateStatus(id: string, status: string) {
+    async updateStatus(id: string, status: string): Promise<void> {
         const { error } = await supabase
             .from('listings')
             .update({ status })
@@ -193,7 +167,7 @@ export const listingsService = {
         if (error) throw error
     },
 
-    async deleteListing(id: string) {
+    async deleteListing(id: string): Promise<void> {
         // 1. Fetch photos attached to listing
         const { data: photos } = await supabase
             .from('listing_photos')
@@ -215,12 +189,12 @@ export const listingsService = {
             })
 
             if (filesToRemove.length > 0) {
-                await supabase.storage.from('listing-photos').remove(filesToRemove)
+                await supabase.storage.from('listing-photos').remove(filesToRemove as string[])
             }
         }
     },
 
-    async reportListing(listingId: string, userId: string, reason: string) {
+    async reportListing(listingId: string, userId: string, reason: string): Promise<void> {
         const { error } = await supabase
             .from('reports')
             .insert({
@@ -231,7 +205,7 @@ export const listingsService = {
         if (error) throw error
     },
 
-    async getReportedListings() {
+    async getReportedListings(): Promise<ListingWithOwner[]> {
         // Only accessible by admins via RLS
         const { data, error } = await supabase
             .from('listings')
@@ -246,10 +220,10 @@ export const listingsService = {
             .order('report_count', { ascending: false })
 
         if (error) throw error
-        return data as (Listing & { owner: any, reports: any[] })[]
+        return data as unknown as ListingWithOwner[]
     },
 
-    async dismissReports(listingId: string) {
+    async dismissReports(listingId: string): Promise<void> {
         // Deltes the reports. The DB trigger will decrement the report_count back to 0.
         const { error } = await supabase
             .from('reports')
@@ -259,7 +233,7 @@ export const listingsService = {
         if (error) throw error
     },
 
-    async banUser(userId: string) {
+    async banUser(userId: string): Promise<void> {
         const { error } = await supabase
             .from('profiles')
             .update({ is_banned: true })
@@ -268,7 +242,7 @@ export const listingsService = {
         if (error) throw error
     },
 
-    async getAdminAnalytics() {
+    async getAdminAnalytics(): Promise<{ activeListings: number; completedListings: number; totalUsers: number }> {
         const { data, error } = await supabase.rpc('get_admin_analytics')
         if (error) throw error
         return data as { activeListings: number; completedListings: number; totalUsers: number }

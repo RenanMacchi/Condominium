@@ -1,38 +1,31 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
 import { RouterView, useRoute } from 'vue-router'
-import { useAuthStore } from './stores/auth'
-import { supabase } from './lib/supabaseClient'
+import { useAuth } from './composables/useAuth'
 import BottomNavigation from './components/BottomNavigation.vue'
+import { Toaster } from 'vue-sonner'
+import 'vue-sonner/style.css'
 
-const authStore = useAuthStore()
+const auth = useAuth()
 const route = useRoute()
-
-onMounted(() => {
-  // Initialization is now guaranteed by the Vue Router guard
-
-  // Aggressive protection against Supabase auth token lock freezes on mobile tab-wake
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') {
-      // Forcing a getSession call unblocks any suspended gotrue-js internal HTTP queues 
-      // preventing the infinite "silent failed fetch" bug you experienced.
-      supabase.auth.getSession().catch(console.error)
-    }
-  })
-})
 </script>
 
 <template>
-  <div class="min-h-[100dvh] w-full bg-gray-50 pb-[env(safe-area-inset-bottom,0)]">
-    <div v-if="authStore.loading" class="min-h-screen flex items-center justify-center">
+  <div class="min-h-[100dvh] w-full bg-gray-50 pb-[env(safe-area-bottom,0)]">
+    <!-- Exibe um spinner de carregamento global até que o roteador/supabase resolvam -->
+    <div v-if="!auth.initialized.value" class="min-h-screen flex items-center justify-center">
       <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
     </div>
+    
     <main v-else class="pb-16">
       <RouterView />
     </main>
     
-    <div v-if="!authStore.loading && route.path !== '/login' && route.path !== '/reset-password'" class="fixed bottom-0 left-0 w-full z-50">
+    <div v-if="auth.initialized.value && route.path !== '/login' && route.path !== '/reset-password'" class="fixed bottom-0 left-0 w-full z-50">
       <BottomNavigation />
+    </div>
+    
+    <div class="relative z-[100]">
+      <Toaster position="top-center" richColors />
     </div>
   </div>
 </template>

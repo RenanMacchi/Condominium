@@ -1,20 +1,21 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuthStore } from '../stores/auth'
-import { listingsService, type Category } from '../services/listings'
+import { useAuth } from '../composables/useAuth'
+import { listingsService } from '../services/listings'
+import type { Category, ListingType, ListingCondition, PricingType, CreateListingPayload } from '../types'
 import { UploadCloud, X } from 'lucide-vue-next'
 
 const router = useRouter()
-const authStore = useAuthStore()
+const auth = useAuth()
 
-const type = ref<'VENDA' | 'DOACAO' | 'SERVICO'>('VENDA')
+const type = ref<ListingType>('VENDA')
 const categoryId = ref<number | null>(null)
 const title = ref('')
 const description = ref('')
-const condition = ref<'NOVO' | 'USADO'>('USADO')
+const condition = ref<ListingCondition>('USADO')
 const price = ref('')
-const pricingType = ref<'FIXO' | 'POR_HORA' | 'A_COMBINAR'>('FIXO')
+const pricingType = ref<PricingType>('FIXO')
 const showContact = ref(true)
 
 const files = ref<File[]>([])
@@ -50,7 +51,7 @@ function removeFile(index: number) {
 }
 
 async function handleSubmit() {
-  if (!authStore.user) return
+  if (!auth.user.value) return
   
   if (!categoryId.value) {
     errorMsg.value = 'Selecione uma categoria'
@@ -66,24 +67,33 @@ async function handleSubmit() {
   submitting.value = true
   
   try {
-    const payload: any = {
-      owner_id: authStore.user.id,
+    const payload: CreateListingPayload = {
+      type: type.value,
       title: title.value,
       description: description.value,
       category_id: categoryId.value,
-      type: type.value,
-      show_contact: showContact.value
+      show_contact: showContact.value,
+      owner_id: auth.user.value.id,
+      status: 'ATIVO' as any
     }
     
     if (type.value === 'VENDA') {
       // transform "100.50" string or 100.5 number to cents safely
       payload.price_cents = Math.round(parseFloat(String(price.value).replace(',', '.')) * 100)
       payload.condition = condition.value
+      payload.pricing_type = null
     } else if (type.value === 'SERVICO') {
       payload.pricing_type = pricingType.value
+      payload.condition = null
       if (pricingType.value !== 'A_COMBINAR' && price.value) {
         payload.price_cents = Math.round(parseFloat(String(price.value).replace(',', '.')) * 100)
+      } else {
+        payload.price_cents = null
       }
+    } else if (type.value === 'DOACAO') {
+      payload.price_cents = null
+      payload.condition = null
+      payload.pricing_type = null
     }
     
     const newListing = await listingsService.createListing(payload, files.value)

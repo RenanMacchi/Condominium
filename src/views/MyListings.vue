@@ -1,17 +1,20 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { listingsService, type Listing } from '../services/listings'
-import { useAuthStore } from '../stores/auth'
+import { listingsService } from '../services/listings'
+import type { Listing } from '../types'
+import { getStatusOptions } from '../utils/format'
+import { useAuth } from '../composables/useAuth'
 import { Trash2, Edit2 } from 'lucide-vue-next'
 import { useVisibilityRefetch } from '../composables/useVisibilityRefetch'
+import { toast } from 'vue-sonner'
 
 import { useRouter } from 'vue-router'
 
-const authStore = useAuthStore()
+const auth = useAuth()
 const router = useRouter()
 
 useVisibilityRefetch(() => {
-  if (authStore.user) {
+  if (auth.user.value) {
     loadMyListings()
   }
 })
@@ -19,10 +22,10 @@ const listings = ref<Listing[]>([])
 const loading = ref(true)
 
 async function loadMyListings() {
-  if (!authStore.user) return
+  if (!auth.user.value) return
   loading.value = true
   try {
-    listings.value = await listingsService.getMyListings(authStore.user.id)
+    listings.value = await listingsService.getMyListings(auth.user.value.id)
   } catch (err) {
     console.error(err)
   } finally {
@@ -34,9 +37,10 @@ async function changeStatus(listing: Listing, newStatus: string) {
   try {
     listing.status = newStatus as any // UI optimistic config
     await listingsService.updateStatus(listing.id, newStatus)
+    toast.success('Status atualizado')
   } catch (e) {
     console.error(e)
-    alert('Erro ao atualizar status')
+    toast.error('Erro ao atualizar status')
     loadMyListings() // reload
   }
 }
@@ -46,33 +50,13 @@ async function deleteListing(id: string) {
   try {
     await listingsService.deleteListing(id)
     listings.value = listings.value.filter(l => l.id !== id)
+    toast.success('Anúncio excluído')
   } catch (e) {
     console.error(e)
-    alert('Erro ao excluir anúncio')
+    toast.error('Erro ao excluir anúncio')
   }
 }
 
-const statusOptionsByModel: Record<string, { label: string, value: string }[]> = {
-  'VENDA': [
-    { label: 'Ativo', value: 'ATIVO' },
-    { label: 'Concluído/Vendido', value: 'CONCLUIDO' },
-    { label: 'Inativo', value: 'INATIVO' },
-  ],
-  'DOACAO': [
-    { label: 'Ativo', value: 'ATIVO' },
-    { label: 'Concluído/Doado', value: 'CONCLUIDO' },
-    { label: 'Inativo', value: 'INATIVO' },
-  ],
-  'SERVICO': [
-    { label: 'Ativo', value: 'ATIVO' },
-    { label: 'Concluído/Pausado', value: 'CONCLUIDO' },
-    { label: 'Inativo', value: 'INATIVO' },
-  ]
-}
-
-function getOptions(type: string) {
-  return statusOptionsByModel[type] || statusOptionsByModel['VENDA']
-}
 
 function statusColor(status: string) {
   switch (status) {
@@ -84,7 +68,7 @@ function statusColor(status: string) {
 }
 
 onMounted(() => {
-  if (authStore.user) {
+  if (auth.user.value) {
     loadMyListings()
   }
 })
@@ -133,7 +117,7 @@ onMounted(() => {
               @change="(e) => changeStatus(listing, (e.target as HTMLSelectElement).value)"
               class="text-[11px] border border-gray-300 rounded px-2 py-1 flex-1 bg-gray-50 outline-none focus:border-green-500 font-medium"
             >
-              <option v-for="opt in getOptions(listing.type)" :key="opt.value" :value="opt.value">
+              <option v-for="opt in getStatusOptions(listing.type)" :key="opt.value" :value="opt.value">
                 {{ opt.label }}
               </option>
             </select>
