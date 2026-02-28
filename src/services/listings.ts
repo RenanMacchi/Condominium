@@ -9,22 +9,52 @@ export const listingsService = {
     },
 
     async getLatestActivListings(typeFilter?: string, categoryId?: number, statusFilter: string = 'ATIVO'): Promise<Listing[]> {
+        const selectStr = `
+            *,
+            photos:listing_photos(url),
+            category:categories(name, icon)
+        `
+
+        if (!typeFilter) {
+            // When 'Tudo' is selected, prioritize CAMPANHA
+            let campQuery = supabase.from('listings').select(selectStr)
+                .eq('status', statusFilter).eq('type', 'CAMPANHA').lt('report_count', 10)
+                .order('created_at', { ascending: false }).limit(5)
+
+            let otherQuery = supabase.from('listings').select(selectStr)
+                .eq('status', statusFilter).neq('type', 'CAMPANHA').lt('report_count', 10)
+                .order('favorites_count', { ascending: false }).order('created_at', { ascending: false }).limit(20)
+
+            if (categoryId) {
+                campQuery = campQuery.eq('category_id', categoryId)
+                otherQuery = otherQuery.eq('category_id', categoryId)
+            }
+
+            const [campRes, otherRes] = await Promise.all([campQuery, otherQuery])
+            if (campRes.error) throw campRes.error
+            if (otherRes.error) throw otherRes.error
+
+            return [...(campRes.data || []), ...(otherRes.data || [])] as Listing[]
+        }
+
+        // Specific type tab
         let query = supabase
             .from('listings')
-            .select(`
-        *,
-        photos:listing_photos(url),
-        category:categories(name, icon)
-      `)
+            .select(selectStr)
             .eq('status', statusFilter)
             .lt('report_count', 10)
             .order('favorites_count', { ascending: false })
             .order('created_at', { ascending: false })
             .limit(20)
 
-        if (typeFilter) {
+        if (typeFilter === 'PEDIDOS_DOACAO') {
+            query = query.eq('type', 'DOACAO').eq('is_donation_request', true)
+        } else if (typeFilter === 'DOACAO') {
+            query = query.eq('type', 'DOACAO').eq('is_donation_request', false)
+        } else {
             query = query.eq('type', typeFilter)
         }
+
         if (categoryId) {
             query = query.eq('category_id', categoryId)
         }

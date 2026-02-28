@@ -200,7 +200,7 @@ onMounted(() => {
         <!-- Badges -->
         <div class="absolute top-3 left-3 flex gap-2 pointer-events-none z-10">
           <span class="px-2 py-1 rounded bg-black/60 text-white text-xs font-bold uppercase tracking-wider backdrop-blur-md">
-            {{ listing.type }}
+            {{ listing.type === 'DOACAO' && listing.is_donation_request ? 'PEDIDO DE DOAÇÃO' : listing.type }}
           </span>
           <span v-if="listing.condition" class="px-2 py-1 rounded bg-white text-gray-900 text-xs font-bold uppercase tracking-wider shadow-sm">
             {{ listing.condition }}
@@ -229,6 +229,20 @@ onMounted(() => {
 
         <div class="prose prose-sm max-w-none text-gray-600 mb-8 whitespace-pre-line">
           {{ listing.description }}
+        </div>
+
+        <!-- Campanhas Info -->
+        <div v-if="listing.type === 'CAMPANHA' && (listing.campaign_link || listing.campaign_location)" class="bg-blue-50 p-4 rounded-xl mb-8 space-y-3 border border-blue-100">
+           <h3 class="font-bold text-blue-900 flex items-center gap-2">Detalhes da Campanha</h3>
+           <a v-if="listing.campaign_link" :href="listing.campaign_link.startsWith('http') ? listing.campaign_link : 'https://' + listing.campaign_link" target="_blank" class="flex items-center gap-2 text-sm text-blue-700 hover:text-blue-800 hover:underline">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+              Acessar Link da Campanha
+           </a>
+           <div v-if="listing.campaign_location" class="flex items-start gap-2 text-sm text-blue-700">
+              <MapPin class="w-4 h-4 flex-shrink-0 mt-0.5" />
+              <span>{{ listing.campaign_location }}</span>
+              <a v-if="listing.campaign_location.startsWith('http')" :href="listing.campaign_location" target="_blank" class="underline ml-1 font-semibold hover:text-blue-800">(Ver no Mapa)</a>
+           </div>
         </div>
 
         <!-- Vendor Info -->

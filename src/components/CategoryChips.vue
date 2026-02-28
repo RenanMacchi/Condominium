@@ -1,14 +1,31 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { Category } from '../types'
 
-defineProps<{
+const props = defineProps<{
   categories: Category[]
   selectedId: number | null
+  currentTab?: string
 }>()
 
 defineEmits<{
   (e: 'select', id: number | null): void
 }>()
+
+const filteredCategories = computed(() => {
+  if (!props.currentTab) return props.categories // Tudo
+
+  if (props.currentTab === 'SERVICO') {
+    return props.categories.filter(c => c.category_group === 'SERVICO' || c.category_group === 'GERAL')
+  }
+
+  if (props.currentTab === 'CAMPANHA') {
+    return props.categories.filter(c => c.category_group === 'GERAL')
+  }
+
+  // VENDA, DOACAO, PEDIDOS_DOACAO, CONCLUIDOS
+  return props.categories.filter(c => c.category_group === 'PRODUTO' || c.category_group === 'GERAL')
+})
 </script>
 
 <template>
@@ -21,7 +38,7 @@ defineEmits<{
       Todos
     </button>
     <button 
-      v-for="cat in categories" 
+      v-for="cat in filteredCategories" 
       :key="cat.id"
       @click="$emit('select', cat.id)"
       class="whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-colors"

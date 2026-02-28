@@ -26,8 +26,9 @@ const coverPhoto = computed(() => {
 })
 
 const badgeColor = computed(() => {
+  if (props.listing.type === 'DOACAO') return props.listing.is_donation_request ? 'bg-orange-100 text-orange-800' : 'bg-emerald-100 text-emerald-800'
+  if (props.listing.type === 'CAMPANHA') return 'bg-yellow-100 text-yellow-800'
   if (props.listing.type === 'VENDA') return 'bg-blue-100 text-blue-800'
-  if (props.listing.type === 'DOACAO') return 'bg-emerald-100 text-emerald-800'
   return 'bg-purple-100 text-purple-800'
 })
 </script>
@@ -37,7 +38,7 @@ const badgeColor = computed(() => {
     <div class="aspect-square w-full bg-gray-100 relative">
       <img :src="coverPhoto" :alt="listing.title" class="w-full h-full object-cover transition-all" :class="{'grayscale opacity-50': listing.status === 'CONCLUIDO'}" />
       <div class="absolute top-2 left-2 px-2 py-1 rounded-md text-xs font-bold uppercase tracking-wider shadow-sm" :class="badgeColor">
-        {{ listing.type }}
+        {{ listing.type === 'DOACAO' && listing.is_donation_request ? 'PEDIDO DE DOAÇÃO' : listing.type }}
       </div>
 
       <!-- Favorites Badge -->

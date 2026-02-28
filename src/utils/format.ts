@@ -1,7 +1,8 @@
 import type { Listing } from '../types'
 
 export function formatPrice(listing: Listing): string {
-    if (listing.type === 'DOACAO') return 'Doação'
+    if (listing.type === 'DOACAO') return listing.is_donation_request ? 'Pedido de Doação' : 'Doação'
+    if (listing.type === 'CAMPANHA') return 'Campanha'
     if (listing.type === 'SERVICO' && listing.pricing_type === 'A_COMBINAR') return 'A combinar'
     if (listing.price_cents == null) return ''
 
@@ -26,6 +27,11 @@ export const statusOptionsByType: Record<string, { label: string; value: string 
     SERVICO: [
         { label: 'Ativo', value: 'ATIVO' },
         { label: 'Pausado', value: 'INATIVO' }
+    ],
+    CAMPANHA: [
+        { label: 'Ativo', value: 'ATIVO' },
+        { label: 'Pausado', value: 'INATIVO' },
+        { label: 'Concluído', value: 'CONCLUIDO' }
     ]
 }
 

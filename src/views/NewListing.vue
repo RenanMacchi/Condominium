@@ -18,6 +18,10 @@ const price = ref('')
 const pricingType = ref<PricingType>('FIXO')
 const showContact = ref(true)
 
+const isDonationRequest = ref(false)
+const campaignLink = ref('')
+const campaignLocation = ref('')
+
 const files = ref<File[]>([])
 const fileUrls = ref<string[]>([])
 const categories = ref<Category[]>([])
@@ -28,6 +32,9 @@ const filteredCategories = computed(() => {
   if (type.value === 'SERVICO') {
     return categories.value.filter(c => (c.category_group === 'SERVICO' || c.category_group === 'GERAL') && c.name !== 'Outros')
   }
+  if (type.value === 'CAMPANHA') {
+    return categories.value.filter(c => c.category_group === 'GERAL')
+  }
   return categories.value.filter(c => c.category_group === 'PRODUTO' || c.category_group === 'GERAL')
 })
 
@@ -36,7 +43,7 @@ function handleFileSelect(e: Event) {
   if (!target.files) return
   
   for (let i = 0; i < target.files.length; i++) {
-    if (files.value.length >= 6) break // max 6 photos
+    if (type.value !== 'CAMPANHA' && files.value.length >= 6) break // max 6 photos for non-campaigns
     const file = target.files[i]
     if (!file) continue
     files.value.push(file)
@@ -74,10 +81,17 @@ async function handleSubmit() {
       category_id: categoryId.value,
       show_contact: showContact.value,
       owner_id: auth.user.value.id,
-      status: 'ATIVO' as any
+      status: 'ATIVO' as any,
+      is_donation_request: type.value === 'DOACAO' ? isDonationRequest.value : false,
     }
     
-    if (type.value === 'VENDA') {
+    if (type.value === 'CAMPANHA') {
+      payload.campaign_link = campaignLink.value || undefined
+      payload.campaign_location = campaignLocation.value || undefined
+      payload.price_cents = null
+      payload.condition = null
+      payload.pricing_type = null
+    } else if (type.value === 'VENDA') {
       // transform "100.50" string or 100.5 number to cents safely
       payload.price_cents = Math.round(parseFloat(String(price.value).replace(',', '.')) * 100)
       payload.condition = condition.value
@@ -125,7 +139,7 @@ onMounted(async () => {
       <!-- Type -->
       <div>
         <label class="block text-sm font-bold text-gray-700 mb-2">O que você quer anunciar?</label>
-        <div class="grid grid-cols-3 gap-2">
+        <div :class="auth.profile.value?.is_admin ? 'grid grid-cols-2 md:grid-cols-4 gap-2' : 'grid grid-cols-3 gap-2'">
           <button 
             type="button" 
             @click="type = 'VENDA'"
@@ -149,6 +163,15 @@ onMounted(async () => {
             :class="type === 'SERVICO' ? 'border-green-600 bg-green-50 text-green-700' : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300'"
           >
             Serviço
+          </button>
+          <button 
+             v-if="auth.profile.value?.is_admin"
+             type="button" 
+             @click="type = 'CAMPANHA'"
+            class="py-3 px-2 rounded-xl text-xs font-bold transition-all border-2"
+            :class="type === 'CAMPANHA' ? 'border-green-600 bg-green-50 text-green-700' : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300'"
+          >
+            Campanha
           </button>
         </div>
       </div>
@@ -210,6 +233,34 @@ onMounted(async () => {
         </div>
       </div>
 
+      <!-- Types Specific Content -->
+      <div v-if="type === 'DOACAO'" class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+        <label class="flex items-start gap-3 cursor-pointer">
+          <div class="flex items-center h-5">
+            <input 
+              v-model="isDonationRequest" 
+              type="checkbox" 
+              class="w-5 h-5 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 focus:ring-2"
+            >
+          </div>
+          <div class="flex flex-col">
+            <span class="text-sm font-bold text-gray-900">Este anúncio é um pedido de doação</span>
+            <span class="text-xs text-gray-500">Marque se você está precisando de doações, em vez de oferecer algo.</span>
+          </div>
+        </label>
+      </div>
+
+      <div v-if="type === 'CAMPANHA'" class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 space-y-4">
+        <div>
+          <label for="campaign_link_input" class="block text-sm font-medium text-gray-700 mb-1">Link de Redirecionamento</label>
+          <input id="campaign_link_input" name="campaign_link" v-model="campaignLink" placeholder="https://" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 outline-none" />
+        </div>
+        <div>
+          <label for="campaign_location_input" class="block text-sm font-medium text-gray-700 mb-1">Localização (Maps)</label>
+          <input id="campaign_location_input" name="campaign_location" v-model="campaignLocation" placeholder="Endereço ou link do Maps..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 outline-none" />
+        </div>
+      </div>
+
       <!-- Specific Location -->
       <!-- Contact Options -->
       <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
@@ -230,7 +281,7 @@ onMounted(async () => {
 
       <!-- Photos -->
       <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-        <label class="block text-sm font-medium text-gray-700 mb-2">Fotos (Máx 6)</label>
+        <label class="block text-sm font-medium text-gray-700 mb-2">Fotos {{ type === 'CAMPANHA' ? '(Ilimitadas)' : '(Máx 6)' }}</label>
         
         <div class="grid grid-cols-3 gap-2 mb-3">
           <div v-for="(url, idx) in fileUrls" :key="idx" class="relative aspect-square rounded-lg border border-gray-200 overflow-hidden group">
@@ -240,7 +291,7 @@ onMounted(async () => {
             </button>
           </div>
           
-          <label v-if="files.length < 6" class="aspect-square rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-500 hover:border-green-500 hover:text-green-500 transition-colors cursor-pointer bg-gray-50 relative overflow-hidden">
+          <label v-if="type === 'CAMPANHA' || files.length < 6" class="aspect-square rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-500 hover:border-green-500 hover:text-green-500 transition-colors cursor-pointer bg-gray-50 relative overflow-hidden">
             <UploadCloud class="w-6 h-6 mb-1" />
             <span class="text-xs font-medium">Add Foto</span>
             <input type="file" accept="image/*" multiple @change="handleFileSelect" class="absolute inset-0 opacity-0 cursor-pointer" />

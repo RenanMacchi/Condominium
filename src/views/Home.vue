@@ -17,8 +17,10 @@ useVisibilityRefetch(() => {
 const tabs = [
   { label: 'Tudo', value: '' },
   { label: 'Vendas', value: 'VENDA' },
-  { label: 'Doações', value: 'DOACAO' },
   { label: 'Serviços', value: 'SERVICO' },
+  { label: 'Doações', value: 'DOACAO' },
+  { label: 'Pedidos de doação', value: 'PEDIDOS_DOACAO' },
+  { label: 'Campanhas', value: 'CAMPANHA' },
   { label: 'Concluídos', value: 'CONCLUIDOS' }
 ]
 
@@ -123,6 +125,7 @@ onUnmounted(() => {
         <CategoryChips 
           :categories="categories" 
           :selectedId="currentCategory" 
+          :currentTab="currentTab"
           @select="(id) => currentCategory = id" 
         />
       </div>

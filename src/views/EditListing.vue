@@ -11,7 +11,7 @@ const route = useRoute()
 const auth = useAuth()
 const listingId = computed(() => route.params.id as string)
 
-const type = ref<'VENDA' | 'DOACAO' | 'SERVICO'>('VENDA')
+const type = ref<'VENDA' | 'DOACAO' | 'SERVICO' | 'CAMPANHA'>('VENDA')
 const categoryId = ref<number | null>(null)
 const title = ref('')
 const description = ref('')
@@ -20,6 +20,10 @@ const price = ref('')
 const pricingType = ref<'FIXO' | 'POR_HORA' | 'A_COMBINAR'>('FIXO')
 const showContact = ref(true)
 const status = ref('ATIVO')
+
+const isDonationRequest = ref(false)
+const campaignLink = ref('')
+const campaignLocation = ref('')
 
 const categories = ref<Category[]>([])
 const submitting = ref(false)
@@ -30,6 +34,9 @@ const currentStatusOptions = computed(() => getStatusOptions(type.value))
 const filteredCategories = computed(() => {
   if (type.value === 'SERVICO') {
     return categories.value.filter(c => (c.category_group === 'SERVICO' || c.category_group === 'GERAL') && c.name !== 'Outros')
+  }
+  if (type.value === 'CAMPANHA') {
+    return categories.value.filter(c => c.category_group === 'GERAL')
   }
   return categories.value.filter(c => c.category_group === 'PRODUTO' || c.category_group === 'GERAL')
 })
@@ -59,10 +66,17 @@ async function handleSubmit() {
       category_id: categoryId.value,
       type: type.value as ListingType,
       show_contact: showContact.value,
-      status: status.value as ListingStatus
+      status: status.value as ListingStatus,
+      is_donation_request: type.value === 'DOACAO' ? isDonationRequest.value : false,
     }
     
-    if (type.value === 'VENDA') {
+    if (type.value === 'CAMPANHA') {
+      payload.campaign_link = campaignLink.value || undefined
+      payload.campaign_location = campaignLocation.value || undefined
+      payload.price_cents = null
+      payload.condition = null
+      payload.pricing_type = null
+    } else if (type.value === 'VENDA') {
       // transform "100.50" string or 100.5 number to cents safely
       payload.price_cents = Math.round(parseFloat(String(price.value).replace(',', '.')) * 100)
       payload.condition = condition.value as ListingCondition
@@ -125,6 +139,11 @@ onMounted(async () => {
     } else if (data.type === 'SERVICO') {
       pricingType.value = data.pricing_type || 'FIXO'
       if (data.price_cents) price.value = (data.price_cents / 100).toFixed(2)
+    } else if (data.type === 'DOACAO') {
+      isDonationRequest.value = data.is_donation_request ?? false
+    } else if (data.type === 'CAMPANHA') {
+      campaignLink.value = data.campaign_link || ''
+      campaignLocation.value = data.campaign_location || ''
     }
   } catch (e) {
     console.error(e)
@@ -147,7 +166,7 @@ onMounted(async () => {
       <!-- Type -->
       <div>
         <label class="block text-sm font-bold text-gray-700 mb-2">O que você quer anunciar?</label>
-        <div class="grid grid-cols-3 gap-2">
+        <div :class="auth.profile.value?.is_admin ? 'grid grid-cols-2 md:grid-cols-4 gap-2' : 'grid grid-cols-3 gap-2'">
           <button 
             type="button" 
             @click="type = 'VENDA'"
@@ -171,6 +190,15 @@ onMounted(async () => {
             :class="type === 'SERVICO' ? 'border-green-600 bg-green-50 text-green-700' : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300'"
           >
             Serviço
+          </button>
+          <button 
+             v-if="auth.profile.value?.is_admin"
+             type="button" 
+             @click="type = 'CAMPANHA'"
+            class="py-3 px-2 rounded-xl text-xs font-bold transition-all border-2"
+            :class="type === 'CAMPANHA' ? 'border-green-600 bg-green-50 text-green-700' : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300'"
+          >
+            Campanha
           </button>
         </div>
       </div>
@@ -238,6 +266,34 @@ onMounted(async () => {
         <div v-if="pricingType !== 'A_COMBINAR'">
           <label class="block text-sm font-medium text-gray-700 mb-1">Valor Referência (R$)</label>
           <input v-model="price" type="number" step="0.01" min="0" placeholder="Opcional" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 outline-none" />
+        </div>
+      </div>
+
+      <!-- Types Specific Content -->
+      <div v-if="type === 'DOACAO'" class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+        <label class="flex items-start gap-3 cursor-pointer">
+          <div class="flex items-center h-5">
+            <input 
+              v-model="isDonationRequest" 
+              type="checkbox" 
+              class="w-5 h-5 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 focus:ring-2"
+            >
+          </div>
+          <div class="flex flex-col">
+            <span class="text-sm font-bold text-gray-900">Este anúncio é um pedido de doação</span>
+            <span class="text-xs text-gray-500">Marque se você está precisando de doações, em vez de oferecer algo.</span>
+          </div>
+        </label>
+      </div>
+
+      <div v-if="type === 'CAMPANHA'" class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Link de Redirecionamento</label>
+          <input v-model="campaignLink" placeholder="https://" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 outline-none" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Localização (Maps)</label>
+          <input v-model="campaignLocation" placeholder="Endereço ou link do Maps..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 outline-none" />
         </div>
       </div>
 

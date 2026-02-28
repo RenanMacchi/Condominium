@@ -20,7 +20,7 @@ export interface Category {
     icon: string | null
 }
 
-export type ListingType = 'VENDA' | 'DOACAO' | 'SERVICO'
+export type ListingType = 'VENDA' | 'DOACAO' | 'SERVICO' | 'CAMPANHA'
 export type ListingStatus = 'ATIVO' | 'INATIVO' | 'CONCLUIDO'
 export type PricingType = 'FIXO' | 'POR_HORA' | 'A_COMBINAR'
 export type ListingCondition = 'NOVO' | 'USADO'
@@ -47,6 +47,9 @@ export interface Listing {
     report_count: number
     photos?: ListingPhoto[]
     category?: Partial<Category>
+    is_donation_request?: boolean
+    campaign_link?: string
+    campaign_location?: string
 }
 
 export interface ListingWithOwner extends Listing {
@@ -73,6 +76,9 @@ export interface CreateListingPayload {
     show_contact: boolean
     owner_id: string
     status: ListingStatus
+    is_donation_request?: boolean
+    campaign_link?: string
+    campaign_location?: string
 }
 
 export interface UpdateListingPayload extends Partial<CreateListingPayload> {
