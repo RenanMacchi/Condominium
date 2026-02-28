@@ -2,6 +2,7 @@
 import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { listingsService } from '../services/listings'
 import type { Listing, Category } from '../types'
+import { isListingOpen } from '../utils/format'
 import CategoryChips from '../components/CategoryChips.vue'
 import ListingCard from '../components/ListingCard.vue'
 import { useVisibilityRefetch } from '../composables/useVisibilityRefetch'
@@ -40,7 +41,19 @@ async function loadData() {
     if (currentTab.value === 'CONCLUIDOS') {
       listings.value = await listingsService.getLatestActivListings(undefined, currentCategory.value || undefined, 'CONCLUIDO')
     } else {
-      listings.value = await listingsService.getLatestActivListings(currentTab.value, currentCategory.value || undefined, 'ATIVO')
+      const rawListings = await listingsService.getLatestActivListings(currentTab.value, currentCategory.value || undefined, 'ATIVO')
+      
+      // Sort closed listings to the end
+      listings.value = rawListings.sort((a, b) => {
+        // Campanhas have priority overall, but our getLatestActivListings already puts them first
+        // We just need to ensure we don't mess up that priority unless we are penalizing a closed store
+        const aOpen = isListingOpen(a)
+        const bOpen = isListingOpen(b)
+        
+        if (aOpen === bOpen) return 0 // keep original order
+        if (aOpen && !bOpen) return -1
+        return 1
+      })
     }
   } catch (error) {
     console.error('Error loading listings', error)

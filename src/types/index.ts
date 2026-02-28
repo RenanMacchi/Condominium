@@ -50,6 +50,10 @@ export interface Listing {
     is_donation_request?: boolean
     campaign_link?: string
     campaign_location?: string
+    has_business_hours?: boolean
+    business_days?: number[]
+    open_time?: string
+    close_time?: string
 }
 
 export interface ListingWithOwner extends Listing {
@@ -79,6 +83,10 @@ export interface CreateListingPayload {
     is_donation_request?: boolean
     campaign_link?: string
     campaign_location?: string
+    has_business_hours?: boolean
+    business_days?: number[]
+    open_time?: string
+    close_time?: string
 }
 
 export interface UpdateListingPayload extends Partial<CreateListingPayload> {

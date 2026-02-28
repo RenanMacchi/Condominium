@@ -22,6 +22,32 @@ const isDonationRequest = ref(false)
 const campaignLink = ref('')
 const campaignLocation = ref('')
 
+// Horário de Atendimento
+const hasBusinessHours = ref(false)
+const businessDays = ref<number[]>([1, 2, 3, 4, 5]) // Segunda a Sexta por padrão
+const openTime = ref('08:00')
+const closeTime = ref('18:00')
+
+const weekDays = [
+  { id: 0, label: 'D', name: 'Domingo' },
+  { id: 1, label: 'S', name: 'Segunda-feira' },
+  { id: 2, label: 'T', name: 'Terça-feira' },
+  { id: 3, label: 'Q', name: 'Quarta-feira' },
+  { id: 4, label: 'Q', name: 'Quinta-feira' },
+  { id: 5, label: 'S', name: 'Sexta-feira' },
+  { id: 6, label: 'S', name: 'Sábado' }
+]
+
+function toggleDay(dayId: number) {
+  const index = businessDays.value.indexOf(dayId)
+  if (index === -1) {
+    businessDays.value.push(dayId)
+    businessDays.value.sort()
+  } else {
+    businessDays.value.splice(index, 1)
+  }
+}
+
 const files = ref<File[]>([])
 const fileUrls = ref<string[]>([])
 const categories = ref<Category[]>([])
@@ -65,6 +91,17 @@ async function handleSubmit() {
     return
   }
   
+  if (hasBusinessHours.value) {
+    if (businessDays.value.length === 0) {
+      errorMsg.value = 'Selecione pelo menos um dia de atendimento'
+      return
+    }
+    if (!openTime.value || !closeTime.value) {
+      errorMsg.value = 'Informe o horário de abertura e fechamento'
+      return
+    }
+  }
+
   if (type.value === 'VENDA' && !price.value) {
     errorMsg.value = 'Informe um preço para a venda'
     return
@@ -83,6 +120,10 @@ async function handleSubmit() {
       owner_id: auth.user.value.id,
       status: 'ATIVO' as any,
       is_donation_request: type.value === 'DOACAO' ? isDonationRequest.value : false,
+      has_business_hours: hasBusinessHours.value,
+      business_days: hasBusinessHours.value ? businessDays.value : [],
+      open_time: hasBusinessHours.value ? openTime.value : undefined,
+      close_time: hasBusinessHours.value ? closeTime.value : undefined
     }
     
     if (type.value === 'CAMPANHA') {
@@ -258,6 +299,56 @@ onMounted(async () => {
         <div>
           <label for="campaign_location_input" class="block text-sm font-medium text-gray-700 mb-1">Localização (Maps)</label>
           <input id="campaign_location_input" name="campaign_location" v-model="campaignLocation" placeholder="Endereço ou link do Maps..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 outline-none" />
+        </div>
+      </div>
+
+      <!-- Horário de Atendimento -->
+      <div v-if="type === 'VENDA' || type === 'SERVICO'" class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 space-y-4">
+        <label class="flex items-start gap-3 cursor-pointer">
+          <div class="flex items-center h-5">
+            <input 
+              v-model="hasBusinessHours" 
+              type="checkbox" 
+              class="w-5 h-5 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 focus:ring-2"
+            >
+          </div>
+          <div class="flex flex-col">
+            <span class="text-sm font-bold text-gray-900">Definir horário de atendimento</span>
+            <span class="text-xs text-gray-500">Fora do horário, o anúncio aparecerá como "Fechado" e terá menor prioridade nas buscas.</span>
+          </div>
+        </label>
+
+        <div v-if="hasBusinessHours" class="pt-2 border-t border-gray-100 flex flex-col gap-4">
+          <!-- Dias da semana -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Dias de Funcionamento</label>
+            <div class="flex gap-1.5 flex-wrap">
+              <button 
+                v-for="day in weekDays" 
+                :key="day.id"
+                type="button"
+                @click="toggleDay(day.id)"
+                class="w-10 h-10 rounded-full font-bold text-sm transition-colors"
+                :class="businessDays.includes(day.id) ? 'bg-green-600 text-white shadow-sm' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'"
+                :title="day.name"
+              >
+                {{ day.label }}
+              </button>
+            </div>
+            <p v-if="businessDays.length === 0" class="text-xs text-red-500 mt-1">Selecione pelo menos um dia.</p>
+          </div>
+
+          <!-- Horários -->
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label for="open_time_input" class="block text-sm font-medium text-gray-700 mb-1">Abertura</label>
+              <input id="open_time_input" name="open_time" v-model="openTime" type="time" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 outline-none" />
+            </div>
+            <div>
+              <label for="close_time_input" class="block text-sm font-medium text-gray-700 mb-1">Fechamento</label>
+              <input id="close_time_input" name="close_time" v-model="closeTime" type="time" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 outline-none" />
+            </div>
+          </div>
         </div>
       </div>
 

@@ -5,9 +5,10 @@ import { listingsService } from '../services/listings'
 import type { ListingWithOwner } from '../types'
 import { favoritesService } from '../services/favorites'
 import { useAuth } from '../composables/useAuth'
-import { ChevronLeft, ChevronRight, X, Heart, MessageCircle, MapPin, AlertTriangle } from 'lucide-vue-next'
+import { ChevronLeft, ChevronRight, X, Heart, MessageCircle, MapPin, AlertTriangle, Moon, Sun } from 'lucide-vue-next'
 import { useVisibilityRefetch } from '../composables/useVisibilityRefetch'
 import { toast } from 'vue-sonner'
+import { isListingOpen } from '../utils/format'
 
 const route = useRoute()
 const router = useRouter()
@@ -127,6 +128,32 @@ const formattedPrice = computed(() => {
   return ''
 })
 
+const isOpen = computed(() => {
+  if (!listing.value) return true
+  return isListingOpen(listing.value)
+})
+
+const businessDaysText = computed(() => {
+  if (!listing.value || !listing.value.has_business_hours || !listing.value.business_days?.length) return ''
+  const weekDays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
+  const sortedDays = [...listing.value.business_days].sort()
+  
+  if (sortedDays.length === 7) return 'Todos os dias'
+  if (sortedDays.length === 5 && sortedDays[0] === 1 && sortedDays[4] === 5) return 'Segunda a Sexta'
+  
+  return sortedDays.map(d => weekDays[d]).join(', ')
+})
+
+const openTimeText = computed(() => {
+  if (!listing.value || !listing.value.open_time) return ''
+  return listing.value.open_time.substring(0, 5)
+})
+
+const closeTimeText = computed(() => {
+  if (!listing.value || !listing.value.close_time) return ''
+  return listing.value.close_time.substring(0, 5)
+})
+
 onMounted(() => {
   loadListing()
 })
@@ -225,6 +252,18 @@ onMounted(() => {
         
         <div class="text-3xl font-extrabold mb-6 tracking-tight" :class="listing.status === 'CONCLUIDO' ? 'text-gray-500' : 'text-green-600'">
           {{ formattedPrice }}
+        </div>
+
+        <div v-if="listing.has_business_hours && (listing.type === 'VENDA' || listing.type === 'SERVICO')" class="mb-6 p-4 rounded-xl shadow-sm border" :class="isOpen ? 'bg-green-50 border-green-100' : 'bg-gray-100 border-gray-200'">
+          <div class="flex items-center gap-2 mb-2">
+             <Sun v-if="isOpen" class="w-5 h-5 text-green-600" />
+             <Moon v-else class="w-5 h-5 text-gray-500" />
+             <span class="font-bold" :class="isOpen ? 'text-green-800' : 'text-gray-700'">{{ isOpen ? 'Aberto Agora' : 'Fechado Agora' }}</span>
+          </div>
+          <div class="text-sm" :class="isOpen ? 'text-green-700' : 'text-gray-600'">
+            <p><span class="font-semibold">Dias:</span> {{ businessDaysText }}</p>
+            <p><span class="font-semibold">Horário:</span> {{ openTimeText }} às {{ closeTimeText }}</p>
+          </div>
         </div>
 
         <div class="prose prose-sm max-w-none text-gray-600 mb-8 whitespace-pre-line">
