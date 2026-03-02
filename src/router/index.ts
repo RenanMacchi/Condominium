@@ -19,24 +19,24 @@ const router = createRouter({
 })
 
 // Route Guard
-router.beforeEach(async (to, _from, next) => {
+router.beforeEach(async (to) => {
     // Busca a sessão diretamente no momento da navegação
     const { data: { session } } = await supabase.auth.getSession()
 
     // Intercept Supabase Recovery Link (arrives as hash on root usually)
     if (to.hash.includes('type=recovery') && to.path !== '/reset-password') {
-        return next({ path: '/reset-password', hash: to.hash })
+        return { path: '/reset-password', hash: to.hash }
     }
 
     const requiresAuth = to.meta.requiresAuth !== false && to.path !== '/login' && to.path !== '/reset-password'
 
     if (requiresAuth && !session) {
-        return next('/login')
+        return '/login'
     } else if (to.path === '/login' && session) {
-        return next('/')
+        return '/'
     }
 
-    return next()
+    return true
 })
 
 export default router

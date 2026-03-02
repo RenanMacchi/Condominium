@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabaseClient'
-import type { Category, Listing, ListingWithOwner, CreateListingPayload, UpdateListingPayload } from '../types'
+import type { Category, Listing, ListingWithOwner, CreateListingPayload, UpdateListingPayload, ListingPhoto } from '../types'
 
 export const listingsService = {
     async getCategories(): Promise<Category[]> {
@@ -102,30 +102,47 @@ export const listingsService = {
     },
 
     async searchListings(queryText: string, searchParams?: { type?: string, category_id?: number }): Promise<Listing[]> {
-        let query = supabase
-            .from('listings')
+        if (!queryText.trim()) {
+            // Standard fallback when search bar is empty
+            let query = supabase
+                .from('listings')
+                .select(`
+                    *,
+                    photos:listing_photos(url),
+                    category:categories(name, icon)
+                `)
+                .eq('status', 'ATIVO')
+                .lt('report_count', 10)
+
+            if (searchParams?.type) {
+                query = query.eq('type', searchParams.type)
+            }
+            if (searchParams?.category_id) {
+                query = query.eq('category_id', searchParams.category_id)
+            }
+
+            query = query.order('favorites_count', { ascending: false }).order('created_at', { ascending: false }).limit(40)
+
+            const { data, error } = await query
+            if (error) throw error
+            return data as Listing[]
+        }
+
+        // Fuzzy search when user types
+        const { data, error } = await supabase
+            .rpc('search_listings_fuzzy', {
+                search_term: queryText.trim(),
+                p_type: searchParams?.type || null,
+                p_category_id: searchParams?.category_id || null,
+                min_similarity: 0.15 // Same default as DB function
+            })
+            // We append the select statement to fetch relational data via PostgREST
             .select(`
                 *,
                 photos:listing_photos(url),
                 category:categories(name, icon)
             `)
-            .eq('status', 'ATIVO')
-            .lt('report_count', 10)
 
-        if (queryText.trim()) {
-            query = query.textSearch('search_tsv', queryText.trim(), { config: 'portuguese' })
-        }
-
-        if (searchParams?.type) {
-            query = query.eq('type', searchParams.type)
-        }
-        if (searchParams?.category_id) {
-            query = query.eq('category_id', searchParams.category_id)
-        }
-
-        query = query.order('favorites_count', { ascending: false }).order('created_at', { ascending: false }).limit(40)
-
-        const { data, error } = await query
         if (error) throw error
         return data as Listing[]
     },
@@ -176,7 +193,8 @@ export const listingsService = {
         return newListing as Listing
     },
 
-    async updateListing(id: string, listingData: UpdateListingPayload): Promise<Listing> {
+    async updateListing(id: string, listingData: UpdateListingPayload, photosToKeep?: ListingPhoto[], newFiles?: File[]): Promise<Listing> {
+        // 1. Update basic data
         const { data, error } = await supabase
             .from('listings')
             .update(listingData)
@@ -185,6 +203,86 @@ export const listingsService = {
             .single()
 
         if (error) throw error
+
+        // 2. Handle Photos if any of the photo payloads are provided
+        if (photosToKeep !== undefined || newFiles !== undefined) {
+
+            // 2a. Fetch currently saved photos from the database
+            const { data: currentPhotos } = await supabase
+                .from('listing_photos')
+                .select('url, sort_order')
+                .eq('listing_id', id)
+                .order('sort_order', { ascending: true })
+
+            // Determine which ones to delete
+            const urlsToKeep = (photosToKeep || []).map(p => p.url)
+            const photosToDelete = (currentPhotos || []).filter(p => !urlsToKeep.includes(p.url))
+
+            // Delete removed photos from DB and Storage
+            if (photosToDelete.length > 0) {
+                // Remove from DB (Storage is manual)
+                await supabase
+                    .from('listing_photos')
+                    .delete()
+                    .in('url', photosToDelete.map(p => p.url))
+
+                const storagePaths = photosToDelete.map(p => {
+                    const parts = p.url.split('/')
+                    return `${parts[parts.length - 2]}/${parts[parts.length - 1]}`
+                })
+
+                if (storagePaths.length > 0) {
+                    await supabase.storage.from('listing-photos').remove(storagePaths)
+                }
+            }
+
+            // 2b. Re-order the kept photos to close any gaps (e.g if order 0 and 2 were kept, they become 0 and 1)
+            if (photosToKeep && photosToKeep.length > 0) {
+                for (let i = 0; i < photosToKeep.length; i++) {
+                    await supabase
+                        .from('listing_photos')
+                        .update({ sort_order: i })
+                        .eq('listing_id', id)
+                        .eq('url', photosToKeep[i]!.url)
+                }
+            }
+
+            // 2c. Upload new files and append them to the end
+            if (newFiles && newFiles.length > 0) {
+                const startIndex = photosToKeep ? photosToKeep.length : 0
+                const photoInserts = []
+
+                for (let i = 0; i < newFiles.length; i++) {
+                    const file = newFiles[i]!
+                    const fileExt = file.name.split('.').pop() || 'jpg'
+                    const fileName = `${id}/${Math.random()}.${fileExt}`
+
+                    const { error: uploadError } = await supabase.storage
+                        .from('listing-photos')
+                        .upload(fileName, file)
+
+                    if (uploadError) {
+                        console.error('Error uploading new photo:', uploadError)
+                        continue
+                    }
+
+                    const { data: { publicUrl } } = supabase.storage
+                        .from('listing-photos')
+                        .getPublicUrl(fileName)
+
+                    photoInserts.push({
+                        listing_id: id,
+                        url: publicUrl,
+                        sort_order: startIndex + i
+                    })
+                }
+
+                if (photoInserts.length > 0) {
+                    await supabase.from('listing_photos').insert(photoInserts)
+                }
+            }
+        }
+
         return data as Listing
     },
 
@@ -276,5 +374,43 @@ export const listingsService = {
         const { data, error } = await supabase.rpc('get_admin_analytics')
         if (error) throw error
         return data as { activeListings: number; completedListings: number; totalUsers: number }
+    },
+
+    async autoCleanupListings(): Promise<{ inactivated: number, deleted: number }> {
+        const fifteenDaysAgo = new Date()
+        fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15)
+
+        const { data: toInactivate, error: inactError } = await supabase
+            .from('listings')
+            .update({ status: 'INATIVO' })
+            .lt('updated_at', fifteenDaysAgo.toISOString())
+            .neq('status', 'INATIVO')
+            .select('id')
+
+        if (inactError) throw inactError
+
+        const twentyTwoDaysAgo = new Date()
+        twentyTwoDaysAgo.setDate(twentyTwoDaysAgo.getDate() - 22)
+
+        const { data: toDelete, error: fetchDelError } = await supabase
+            .from('listings')
+            .select('id')
+            .lt('updated_at', twentyTwoDaysAgo.toISOString())
+            .eq('status', 'INATIVO')
+
+        if (fetchDelError) throw fetchDelError
+
+        let deletedCount = 0
+        if (toDelete && toDelete.length > 0) {
+            for (const listing of toDelete) {
+                await this.deleteListing(listing.id) // Also clears physical images
+                deletedCount++
+            }
+        }
+
+        return {
+            inactivated: toInactivate?.length || 0,
+            deleted: deletedCount
+        }
     }
 }

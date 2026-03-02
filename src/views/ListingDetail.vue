@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { listingsService } from '../services/listings'
 import type { ListingWithOwner } from '../types'
@@ -154,6 +154,10 @@ const closeTimeText = computed(() => {
   return listing.value.close_time.substring(0, 5)
 })
 
+watch(id, () => {
+  loadListing()
+})
+
 onMounted(() => {
   loadListing()
 })
@@ -277,50 +281,56 @@ onMounted(() => {
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
               Acessar Link da Campanha
            </a>
-           <div v-if="listing.campaign_location" class="flex items-start gap-2 text-sm text-blue-700">
-              <MapPin class="w-4 h-4 flex-shrink-0 mt-0.5" />
-              <span>{{ listing.campaign_location }}</span>
-              <a v-if="listing.campaign_location.startsWith('http')" :href="listing.campaign_location" target="_blank" class="underline ml-1 font-semibold hover:text-blue-800">(Ver no Mapa)</a>
+           <div v-if="listing.campaign_location" class="flex items-center gap-2 text-sm text-blue-700 w-full overflow-hidden">
+              <MapPin class="w-4 h-4 flex-shrink-0" />
+              <span class="truncate" :title="listing.campaign_location">{{ listing.campaign_location }}</span>
+              <a v-if="listing.campaign_location.startsWith('http')" :href="listing.campaign_location" target="_blank" class="underline flex-shrink-0 font-semibold hover:text-blue-800">(Ver no Mapa)</a>
            </div>
         </div>
 
         <!-- Vendor Info -->
-        <div v-if="listing.status === 'CONCLUIDO'" class="border border-gray-100 rounded-2xl p-4 flex items-center justify-center gap-4 bg-gray-50/50 mb-8">
-          <div class="text-center">
-             <h3 class="font-bold text-gray-700">Anúncio Concluído</h3>
-             <p class="text-xs text-gray-500 mt-1">Este anúncio não está mais recebendo ofertas ou contatos.</p>
-          </div>
-        </div>
-        <template v-else>
-          <div class="border border-gray-100 rounded-2xl p-4 flex items-center gap-4 bg-gray-50/50 mb-8" v-if="listing.owner && listing.show_contact !== false">
-          <div class="w-12 h-12 bg-gray-200 rounded-full flex-shrink-0 overflow-hidden flex items-center justify-center font-bold text-gray-500 text-lg">
-            {{ listing.owner.avatar_url ? '' : (listing.owner.display_name?.charAt(0)?.toUpperCase() || 'U') }}
-            <img v-if="listing.owner.avatar_url" :src="listing.owner.avatar_url" class="w-full h-full object-cover">
-          </div>
-          <div class="flex-1 min-w-0">
-            <h3 class="font-bold text-gray-900 truncate">{{ listing.owner.display_name || 'Usuário' }}</h3>
-            <div class="flex flex-col gap-1 text-xs text-gray-500 mt-1" v-if="listing.owner.house || listing.owner.site">
-              <div v-if="listing.owner.house" class="flex items-center">
-                <MapPin class="w-3 h-3 mr-1 inline" />
-                <span>Casa {{ listing.owner.house }}</span>
-              </div>
-              <a v-if="listing.owner.site" :href="listing.owner.site.startsWith('http') ? listing.owner.site : 'https://' + listing.owner.site" target="_blank" class="text-green-600 hover:underline truncate break-all block">
-                {{ listing.owner.site }}
-              </a>
+        <div class="mb-8 mt-10">
+          <h3 class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3 ml-1">Sobre o Anunciante</h3>
+          
+          <div v-if="listing.status === 'CONCLUIDO'" class="bg-white border border-gray-200 rounded-2xl p-5 flex items-center justify-center gap-4 shadow-sm">
+            <div class="text-center">
+               <h3 class="font-bold text-gray-700">Anúncio Concluído</h3>
+               <p class="text-xs text-gray-500 mt-1">Este anúncio não está mais recebendo ofertas ou contatos.</p>
             </div>
           </div>
+          
+          <template v-else>
+            <div class="bg-white border border-gray-200 rounded-2xl p-5 flex items-center gap-4 shadow-sm" v-if="listing.owner && listing.show_contact !== false">
+              <div class="w-14 h-14 bg-gray-100 border border-gray-200 rounded-full flex-shrink-0 overflow-hidden flex items-center justify-center font-bold text-gray-500 text-xl shadow-inner">
+                {{ listing.owner.avatar_url ? '' : (listing.owner.display_name?.charAt(0)?.toUpperCase() || 'U') }}
+                <img v-if="listing.owner.avatar_url" :src="listing.owner.avatar_url" class="w-full h-full object-cover">
+              </div>
+              <div class="flex-1 min-w-0">
+                <h3 class="font-bold text-gray-900 text-lg leading-tight truncate">{{ listing.owner.display_name || 'Usuário' }}</h3>
+                <div class="flex flex-col gap-1.5 text-sm text-gray-600 mt-2" v-if="listing.owner.house || listing.owner.site">
+                  <div v-if="listing.owner.house" class="flex items-center gap-1.5">
+                    <MapPin class="w-4 h-4 text-gray-400" />
+                    <span>Casa <strong class="text-gray-900">{{ listing.owner.house }}</strong></span>
+                  </div>
+                  <a v-if="listing.owner.site" :href="listing.owner.site.startsWith('http') ? listing.owner.site : 'https://' + listing.owner.site" target="_blank" class="text-green-600 hover:text-green-700 font-medium hover:underline flex items-center gap-1.5 truncate">
+                    <svg class="w-4 h-4 text-green-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
+                    <span class="truncate">{{ listing.owner.site.replace(/^https?:\/\//, '') }}</span>
+                  </a>
+                </div>
+              </div>
+            </div>
+            
+            <div class="bg-white border border-gray-200 rounded-2xl p-5 flex items-center gap-4 shadow-sm" v-else>
+              <div class="w-14 h-14 bg-gray-100 rounded-full flex-shrink-0 overflow-hidden flex items-center justify-center font-bold text-gray-400 text-xl border border-gray-200 shadow-inner">
+                ?
+              </div>
+              <div class="flex-1">
+                <h3 class="font-bold text-gray-900 text-lg">Contato Oculto</h3>
+                <p class="text-sm text-gray-500 mt-1">O anunciante optou por não exibir o seu perfil neste anúncio.</p>
+              </div>
+            </div>
+          </template>
         </div>
-        
-        <div class="border border-gray-100 rounded-2xl p-4 flex items-center gap-4 bg-gray-50/50 mb-8" v-else>
-          <div class="w-12 h-12 bg-gray-200 rounded-full flex-shrink-0 overflow-hidden flex items-center justify-center font-bold text-gray-500 text-lg">
-            U
-          </div>
-          <div class="flex-1">
-            <h3 class="font-bold text-gray-900">Contato Oculto</h3>
-            <p class="text-xs text-gray-500 mt-1">O anunciante optou por não exibir o contato.</p>
-          </div>
-          </div>
-        </template>
         <!-- Removed Old Report Action from here -->
       </div>
 

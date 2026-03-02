@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuth } from '../composables/useAuth'
 import { listingsService } from '../services/listings'
-import type { Category, ListingType, ListingStatus, ListingCondition, PricingType, UpdateListingPayload } from '../types'
+import type { Category, ListingType, ListingStatus, ListingCondition, PricingType, UpdateListingPayload, ListingPhoto } from '../types'
 import { getStatusOptions } from '../utils/format'
+import { UploadCloud, X } from 'lucide-vue-next'
 
 const router = useRouter()
 const route = useRoute()
@@ -67,7 +68,34 @@ const filteredCategories = computed(() => {
   return categories.value.filter(c => c.category_group === 'PRODUTO' || c.category_group === 'GERAL')
 })
 
-// Photos locked for MVP editing
+const existingPhotos = ref<ListingPhoto[]>([])
+const newFiles = ref<File[]>([])
+const newFileUrls = ref<string[]>([])
+
+const totalPhotosCount = computed(() => existingPhotos.value.length + newFiles.value.length)
+
+function handleFileSelect(e: Event) {
+  const target = e.target as HTMLInputElement
+  if (!target.files) return
+  
+  for (let i = 0; i < target.files.length; i++) {
+    if (type.value !== 'CAMPANHA' && totalPhotosCount.value >= 6) break
+    const file = target.files[i]
+    if (!file) continue
+    newFiles.value.push(file)
+    newFileUrls.value.push(URL.createObjectURL(file))
+  }
+  target.value = ''
+}
+
+function removeExistingPhoto(index: number) {
+  existingPhotos.value.splice(index, 1)
+}
+
+function removeNewFile(index: number) {
+  newFiles.value.splice(index, 1)
+  newFileUrls.value.splice(index, 1)
+}
 
 async function handleSubmit() {
   if (!auth.user.value) return
@@ -136,7 +164,12 @@ async function handleSubmit() {
       payload.pricing_type = null
     }
     
-    const updated = await listingsService.updateListing(listingId.value, payload)
+    const updated = await listingsService.updateListing(
+       listingId.value, 
+       payload, 
+       existingPhotos.value, 
+       newFiles.value
+    )
     router.replace(`/listing/${updated.id}`)
   } catch (err: any) {
     console.error(err)
@@ -157,7 +190,7 @@ async function handleDelete() {
   }
 }
 
-onMounted(async () => {
+async function loadListingData() {
   categories.value = await listingsService.getCategories()
   
   // Load existing data
@@ -195,10 +228,22 @@ onMounted(async () => {
       if (data.open_time) openTime.value = data.open_time.substring(0, 5)
       if (data.close_time) closeTime.value = data.close_time.substring(0, 5)
     }
+
+    if (data.photos) {
+      existingPhotos.value = [...data.photos]
+    }
   } catch (e) {
     console.error(e)
     router.push('/me')
   }
+}
+
+watch(listingId, () => {
+  loadListingData()
+})
+
+onMounted(() => {
+  loadListingData()
 })
 </script>
 
@@ -415,10 +460,35 @@ onMounted(async () => {
         </label>
       </div>
 
-      <!-- Photos (Read-Only Info) -->
-      <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 text-center">
-        <p class="text-sm text-gray-500 font-medium">As fotos não podem ser alteradas nesta versão.</p>
-        <p class="text-xs text-gray-400 mt-1">Para mudar as fotos, crie um novo anúncio.</p>
+      <!-- Photos -->
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Fotos {{ type === 'CAMPANHA' ? '(Ilimitadas)' : '(Máx 6)' }}</label>
+        
+        <div class="grid grid-cols-3 gap-2 mb-3">
+          <!-- Existing Photos from DB -->
+          <div v-for="(photo, idx) in existingPhotos" :key="photo.url" class="relative aspect-square rounded-lg border border-gray-200 overflow-hidden group">
+            <img :src="photo.url" class="w-full h-full object-cover">
+            <button @click.prevent="removeExistingPhoto(idx)" class="absolute top-1 right-1 bg-black/50 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <X class="w-3 h-3" />
+            </button>
+          </div>
+
+          <!-- New Photos staged for upload -->
+          <div v-for="(url, idx) in newFileUrls" :key="url" class="relative aspect-square rounded-lg border border-blue-200 overflow-hidden group">
+             <div class="absolute top-0 right-0 left-0 h-1 bg-blue-500 z-10"></div>
+            <img :src="url" class="w-full h-full object-cover">
+            <button @click.prevent="removeNewFile(idx)" class="absolute top-2 right-1 bg-black/50 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <X class="w-3 h-3" />
+            </button>
+          </div>
+          
+          <!-- Upload Button -->
+          <label v-if="type === 'CAMPANHA' || totalPhotosCount < 6" class="aspect-square rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-500 hover:border-green-500 hover:text-green-500 transition-colors cursor-pointer bg-gray-50 relative overflow-hidden">
+            <UploadCloud class="w-6 h-6 mb-1" />
+            <span class="text-xs font-medium">Add Foto</span>
+            <input type="file" accept="image/*" multiple @change="handleFileSelect" class="absolute inset-0 opacity-0 cursor-pointer" />
+          </label>
+        </div>
       </div>
 
       <div class="flex flex-col gap-3 mt-4">

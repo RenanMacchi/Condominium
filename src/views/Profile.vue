@@ -63,7 +63,7 @@ async function handleSignOut() {
     <div v-if="msg" class="mb-4 p-3 bg-blue-50 text-blue-700 rounded-lg text-sm">
       {{ msg }}
     </div>
-    
+
     <form @submit.prevent="saveProfile" class="space-y-4">
       <div>
         <label class="block text-sm font-medium text-gray-700">Nome de Exibição / Apelido</label>

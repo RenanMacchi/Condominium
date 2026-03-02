@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import { listingsService } from '../services/listings'
 import type { ListingWithOwner } from '../types'
 import { useAuth } from '../composables/useAuth'
-import { ShieldAlert, Trash2, CheckCircle, Users, ShoppingBag, CheckSquare, UserX } from 'lucide-vue-next'
+import { ShieldAlert, Trash2, CheckCircle, Users, ShoppingBag, CheckSquare, UserX, DatabaseZap } from 'lucide-vue-next'
 import { useVisibilityRefetch } from '../composables/useVisibilityRefetch'
 import { toast } from 'vue-sonner'
 
@@ -20,6 +20,7 @@ useVisibilityRefetch(() => {
 const reportedListings = ref<ListingWithOwner[]>([])
 const analytics = ref<{ activeListings: number; completedListings: number; totalUsers: number } | null>(null)
 const loading = ref(true)
+const cleaningDb = ref(false)
 
 async function loadData() {
   loading.value = true
@@ -78,6 +79,25 @@ async function banResident(userId: string, userName: string) {
   }
 }
 
+async function runAutoCleanup() {
+  if (!confirm('Deseja executar a rotina de limpeza agora? Isso inativará anúncios com +15 dias sem atualização e REPETIRÁ EXCLUIR DEFINITIVAMENTE anúncios inativos por +7 dias. \n\nObs: Pode demorar um pouco se houver muitas exclusões físicas no Storage.')) return
+  
+  cleaningDb.value = true
+  toast.loading('Iniciando varredura e limpeza do banco...')
+  try {
+    const result = await listingsService.autoCleanupListings()
+    toast.dismiss()
+    toast.success(`Limpeza Concluída! \n- ${result.inactivated} anúncios pausados.\n- ${result.deleted} anúncios (e imagens) excluídos fisicamente.`, { duration: 6000 })
+    loadData() // refresh analytics
+  } catch (e) {
+    console.error(e)
+    toast.dismiss()
+    toast.error('Erro ao processar limpeza automática.')
+  } finally {
+    cleaningDb.value = false
+  }
+}
+
 onMounted(() => {
   if (!auth.profile.value?.is_admin) {
     router.replace('/')
@@ -111,6 +131,19 @@ onMounted(() => {
           <span class="text-2xl font-black text-gray-900 leading-none">{{ analytics.totalUsers }}</span>
           <span class="text-[10px] text-gray-500 font-bold uppercase tracking-wider mt-1">Moradores</span>
        </div>
+    </div>
+
+    <!-- Advanced Maintenance -->
+    <div class="px-4 mb-4">
+      <button 
+        @click="runAutoCleanup"
+        :disabled="cleaningDb"
+        class="w-full bg-white border border-gray-300 shadow-sm hover:bg-gray-50 rounded-xl p-3 flex flex-col items-center justify-center text-center transition-colors disabled:opacity-50"
+      >
+        <DatabaseZap class="w-6 h-6 text-orange-500 mb-1" />
+        <span class="font-bold text-gray-900 leading-none mb-1">Limpeza Lixo / Vencidos</span>
+        <span class="text-[10px] text-gray-500 leading-tight">Pausar +15 dias. Excluir +22 dias. Imagens Inclusas.</span>
+      </button>
     </div>
 
     <div v-if="loading" class="flex justify-center py-10">
