@@ -6,6 +6,8 @@ import { ShieldAlert } from 'lucide-vue-next'
 
 const auth = useAuth()
 const displayName = ref('')
+const username = ref('')
+const recoveryEmail = ref('')
 const whatsapp = ref('')
 const site = ref('')
 const house = ref('')
@@ -15,6 +17,8 @@ const msg = ref('')
 onMounted(() => {
   if (auth.profile.value) {
     displayName.value = auth.profile.value.display_name || ''
+    username.value = auth.profile.value.username || ''
+    recoveryEmail.value = auth.profile.value.recovery_email || ''
     whatsapp.value = auth.profile.value.whatsapp || ''
     site.value = auth.profile.value.site || ''
     house.value = auth.profile.value.house || ''
@@ -30,6 +34,7 @@ async function saveProfile() {
     .from('profiles')
     .update({
       display_name: displayName.value,
+      recovery_email: recoveryEmail.value,
       whatsapp: whatsapp.value,
       site: site.value,
       house: house.value,
@@ -43,6 +48,7 @@ async function saveProfile() {
     // update local state
     if (auth.profile.value) {
       auth.profile.value.display_name = displayName.value
+      auth.profile.value.recovery_email = recoveryEmail.value
       auth.profile.value.whatsapp = whatsapp.value
       auth.profile.value.site = site.value
       auth.profile.value.house = house.value
@@ -66,8 +72,17 @@ async function handleSignOut() {
 
     <form @submit.prevent="saveProfile" class="space-y-4">
       <div>
+        <label class="block text-sm font-medium text-gray-700">Usuário (Login)</label>
+        <input v-model="username" readonly class="mt-1 w-full px-3 py-2 border rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed" />
+        <p class="text-xs text-gray-500 mt-1">O seu usuário é único e não pode ser alterado.</p>
+      </div>
+      <div>
         <label class="block text-sm font-medium text-gray-700">Nome de Exibição / Apelido</label>
         <input v-model="displayName" required class="mt-1 w-full px-3 py-2 border rounded-lg" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">E-mail de Recuperação</label>
+        <input v-model="recoveryEmail" type="email" placeholder="Para recuperar senha se esquecer" class="mt-1 w-full px-3 py-2 border rounded-lg" />
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-700">WhatsApp (Opcional)</label>

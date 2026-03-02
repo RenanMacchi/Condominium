@@ -7,6 +7,7 @@ import { useAuth } from '../composables/useAuth'
 import { ShieldAlert, Trash2, CheckCircle, Users, ShoppingBag, CheckSquare, UserX, DatabaseZap } from 'lucide-vue-next'
 import { useVisibilityRefetch } from '../composables/useVisibilityRefetch'
 import { toast } from 'vue-sonner'
+import { settingsService } from '../services/settings'
 
 const router = useRouter()
 const auth = useAuth()
@@ -18,19 +19,24 @@ useVisibilityRefetch(() => {
 })
 
 const reportedListings = ref<ListingWithOwner[]>([])
-const analytics = ref<{ activeListings: number; completedListings: number; totalUsers: number } | null>(null)
+const analytics = ref<{ activeListings: number; completedListings: number; totalUsers: number; totalVisitors: number } | null>(null)
 const loading = ref(true)
 const cleaningDb = ref(false)
+
+const logoUrl = ref('')
+const savingLogo = ref(false)
 
 async function loadData() {
   loading.value = true
   try {
-    const [listingsData, analyticsData] = await Promise.all([
+    const [listingsData, analyticsData, logoData] = await Promise.all([
       listingsService.getReportedListings(),
-      listingsService.getAdminAnalytics()
+      listingsService.getAdminAnalytics(),
+      settingsService.getLogoUrl()
     ])
     reportedListings.value = listingsData
     analytics.value = analyticsData
+    logoUrl.value = logoData || ''
   } catch (err: any) {
     console.error(err)
     if (err.code === 'PGRST116' || String(err).includes('policy')) {
@@ -98,6 +104,19 @@ async function runAutoCleanup() {
   }
 }
 
+async function saveLogo() {
+  savingLogo.value = true
+  try {
+    await settingsService.updateLogoUrl(logoUrl.value)
+    toast.success('Logo atualizado com sucesso!')
+  } catch (e) {
+    console.error(e)
+    toast.error('Erro ao salvar logo')
+  } finally {
+    savingLogo.value = false
+  }
+}
+
 onMounted(() => {
   if (!auth.profile.value?.is_admin) {
     router.replace('/')
@@ -115,7 +134,7 @@ onMounted(() => {
     </div>
 
     <!-- Analytics Dashboard -->
-    <div v-if="analytics" class="grid grid-cols-3 gap-2 px-4 py-4 bg-white border-b border-gray-200 shadow-sm mb-4">
+    <div v-if="analytics" class="grid grid-cols-2 md:grid-cols-4 gap-2 px-4 py-4 bg-white border-b border-gray-200 shadow-sm mb-4">
        <div class="bg-gray-50 rounded-xl p-3 text-center border border-gray-100 flex flex-col items-center justify-center">
           <ShoppingBag class="w-5 h-5 text-indigo-500 mb-1" />
           <span class="text-2xl font-black text-gray-900 leading-none">{{ analytics.activeListings }}</span>
@@ -131,10 +150,35 @@ onMounted(() => {
           <span class="text-2xl font-black text-gray-900 leading-none">{{ analytics.totalUsers }}</span>
           <span class="text-[10px] text-gray-500 font-bold uppercase tracking-wider mt-1">Moradores</span>
        </div>
+       <div class="bg-gray-50 rounded-xl p-3 text-center border border-gray-100 flex flex-col items-center justify-center">
+          <Users class="w-5 h-5 text-gray-400 mb-1" />
+          <span class="text-2xl font-black text-gray-900 leading-none">{{ analytics.totalVisitors }}</span>
+          <span class="text-[10px] text-gray-500 font-bold uppercase tracking-wider mt-1">Visitantes</span>
+       </div>
     </div>
 
     <!-- Advanced Maintenance -->
-    <div class="px-4 mb-4">
+    <div class="px-4 mb-4 space-y-3">
+      <div class="bg-white border border-gray-300 shadow-sm rounded-xl p-4">
+        <label for="logo_url" class="block text-sm font-bold text-gray-900 mb-1">URL do Logo (Página Inicial)</label>
+        <p class="text-xs text-gray-500 mb-3">Cole uma URL de imagem direta para aparecer ao lado do título.</p>
+        <div class="flex gap-2">
+          <input 
+            id="logo_url"
+            v-model="logoUrl" 
+            placeholder="https://exemplo.com/logo.png" 
+            class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 outline-none text-sm" 
+          />
+          <button 
+            @click="saveLogo" 
+            :disabled="savingLogo"
+            class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg text-sm transition-colors disabled:opacity-70"
+          >
+            {{ savingLogo ? '...' : 'Salvar' }}
+          </button>
+        </div>
+      </div>
+
       <button 
         @click="runAutoCleanup"
         :disabled="cleaningDb"

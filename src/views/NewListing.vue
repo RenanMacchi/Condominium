@@ -69,7 +69,7 @@ function handleFileSelect(e: Event) {
   if (!target.files) return
   
   for (let i = 0; i < target.files.length; i++) {
-    if (type.value !== 'CAMPANHA' && files.value.length >= 6) break // max 6 photos for non-campaigns
+    if (type.value !== 'CAMPANHA' && files.value.length >= 2) break // max 2 photos for non-campaigns
     const file = target.files[i]
     if (!file) continue
     files.value.push(file)
@@ -162,6 +162,10 @@ async function handleSubmit() {
 }
 
 onMounted(async () => {
+  if (auth.profile.value?.is_visitor) {
+    router.replace('/')
+    return
+  }
   categories.value = await listingsService.getCategories()
 })
 </script>
@@ -372,7 +376,7 @@ onMounted(async () => {
 
       <!-- Photos -->
       <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-        <label class="block text-sm font-medium text-gray-700 mb-2">Fotos {{ type === 'CAMPANHA' ? '(Ilimitadas)' : '(Máx 6)' }}</label>
+        <label class="block text-sm font-medium text-gray-700 mb-2">Fotos {{ type === 'CAMPANHA' ? '(Ilimitadas)' : '(Máx 2)' }}</label>
         
         <div class="grid grid-cols-3 gap-2 mb-3">
           <div v-for="(url, idx) in fileUrls" :key="idx" class="relative aspect-square rounded-lg border border-gray-200 overflow-hidden group">
@@ -382,7 +386,7 @@ onMounted(async () => {
             </button>
           </div>
           
-          <label v-if="type === 'CAMPANHA' || files.length < 6" class="aspect-square rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-500 hover:border-green-500 hover:text-green-500 transition-colors cursor-pointer bg-gray-50 relative overflow-hidden">
+          <label v-if="type === 'CAMPANHA' || files.length < 2" class="aspect-square rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-500 hover:border-green-500 hover:text-green-500 transition-colors cursor-pointer bg-gray-50 relative overflow-hidden">
             <UploadCloud class="w-6 h-6 mb-1" />
             <span class="text-xs font-medium">Add Foto</span>
             <input type="file" accept="image/*" multiple @change="handleFileSelect" class="absolute inset-0 opacity-0 cursor-pointer" />

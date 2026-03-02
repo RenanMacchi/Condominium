@@ -8,7 +8,10 @@ export interface Profile {
     house?: string
     site?: string
     is_admin: boolean
+    is_visitor: boolean
     is_banned: boolean
+    username?: string
+    recovery_email?: string
 }
 
 export type CategoryGroup = 'PRODUTO' | 'SERVICO' | 'GERAL'

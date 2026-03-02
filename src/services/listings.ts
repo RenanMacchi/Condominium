@@ -148,6 +148,17 @@ export const listingsService = {
     },
 
     async createListing(listingData: CreateListingPayload, files: File[]): Promise<Listing> {
+        // Enforce max 3 active/inactive listings rule
+        const { count, error: countError } = await supabase
+            .from('listings')
+            .select('*', { count: 'exact', head: true })
+            .eq('owner_id', listingData.owner_id)
+
+        if (countError) throw countError
+        if (count !== null && count >= 3) {
+            throw new Error("Você atingiu o limite máximo de 3 anúncios. Exclua anúncios antigos para criar novos.")
+        }
+
         // 1. Insert listing
         const { data: newListing, error: listingError } = await supabase
             .from('listings')
@@ -370,10 +381,10 @@ export const listingsService = {
         if (error) throw error
     },
 
-    async getAdminAnalytics(): Promise<{ activeListings: number; completedListings: number; totalUsers: number }> {
+    async getAdminAnalytics(): Promise<{ activeListings: number; completedListings: number; totalUsers: number; totalVisitors: number }> {
         const { data, error } = await supabase.rpc('get_admin_analytics')
         if (error) throw error
-        return data as { activeListings: number; completedListings: number; totalUsers: number }
+        return data as { activeListings: number; completedListings: number; totalUsers: number; totalVisitors: number }
     },
 
     async autoCleanupListings(): Promise<{ inactivated: number, deleted: number }> {

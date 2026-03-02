@@ -5,7 +5,8 @@ import { supabase } from '../lib/supabaseClient'
 import { toast } from 'vue-sonner'
 
 const router = useRouter()
-const email = ref('')
+const username = ref('')
+const recoveryEmail = ref('')
 const password = ref('')
 const loading = ref(false)
 const isSignUp = ref(false)
@@ -16,17 +17,44 @@ async function handleSubmit() {
   errorMsg.value = ''
   
   try {
+    const formattedUsername = String(username.value).trim().toLowerCase()
+    if (!formattedUsername) throw new Error('O usuário é obrigatório')
+
     if (isSignUp.value) {
+      // 1. Check if username is valid format (no spaces, etc)
+      if (/\s/.test(formattedUsername)) {
+        throw new Error('O nome de usuário não pode conter espaços.')
+      }
+
+      // 2. Generate fake email for Supabase Auth
+      const fakeEmail = `${formattedUsername}@condominiostore.local`
+      
       const { error } = await supabase.auth.signUp({
-        email: email.value,
+        email: fakeEmail,
         password: password.value,
+        options: {
+          data: {
+            username: formattedUsername,
+            recovery_email: recoveryEmail.value || null
+          }
+        }
       })
       if (error) throw error
+
       toast.success('Conta criada com sucesso!')
       router.push('/')
     } else {
+      // Login flow: Find the real underlying Auth user email for this username
+      const { data: realEmail, error: rpcError } = await supabase.rpc('get_email_by_username', {
+        p_username: formattedUsername
+      })
+
+      if (rpcError || !realEmail) {
+        throw new Error('Usuário não encontrado ou senha incorreta.')
+      }
+
       const { error } = await supabase.auth.signInWithPassword({
-        email: email.value,
+        email: realEmail,
         password: password.value,
       })
       if (error) throw error
@@ -40,18 +68,28 @@ async function handleSubmit() {
 }
 
 async function handleResetPassword() {
-  if (!email.value) {
-    errorMsg.value = 'Por favor, informe seu e-mail acima para recuperar a senha.'
+  if (!username.value) {
+    errorMsg.value = 'Por favor, informe seu usuário acima para recuperar a senha.'
     return
   }
   loading.value = true
   errorMsg.value = ''
   try {
-    const { error } = await supabase.auth.resetPasswordForEmail(email.value, {
+    const formattedUsername = String(username.value).trim().toLowerCase()
+
+    const { data: realEmail, error: rpcError } = await supabase.rpc('get_email_by_username', {
+      p_username: formattedUsername
+    })
+
+    if (rpcError || !realEmail) {
+      throw new Error('Usuário não encontrado ou sem e-mail de recuperação cadastrado.')
+    }
+
+    const { error } = await supabase.auth.resetPasswordForEmail(realEmail, {
       redirectTo: window.location.origin + '/reset-password',
     })
     if (error) throw error
-    toast.success('As instruções para redefinir sua senha foram enviadas para o seu e-mail!')
+    toast.success('As instruções para redefinir sua senha foram enviadas para o seu e-mail de recuperação!')
   } catch (err: any) {
     errorMsg.value = err.message || 'Erro ao solicitar redefinição'
   } finally {
@@ -77,17 +115,31 @@ async function handleResetPassword() {
         </div>
         
         <div>
-          <label for="email_input" class="block text-sm font-medium text-gray-700 mb-1">E-mail</label>
+          <label for="username_input" class="block text-sm font-medium text-gray-700 mb-1">Usuário</label>
           <input 
-            id="email_input"
-            name="email"
-            autocomplete="email"
-            v-model="email" 
-            type="email" 
+            id="username_input"
+            name="username"
+            autocomplete="username"
+            v-model="username" 
+            type="text" 
             required 
-            class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition"
-            placeholder="seu@email.com"
+            class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition lowercase"
+            placeholder="joao123"
           >
+        </div>
+
+        <div v-if="isSignUp">
+          <label for="recovery_email_input" class="block text-sm font-medium text-gray-700 mb-1">E-mail de Recuperação (Opcional)</label>
+          <input 
+            id="recovery_email_input"
+            name="recovery_email"
+            autocomplete="email"
+            v-model="recoveryEmail" 
+            type="email" 
+            class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition"
+            placeholder="seu@gemail.com"
+          >
+          <p class="text-[10px] text-gray-500 mt-1">Sugerimos informar um e-mail para conseguir redefinir sua senha caso esqueça.</p>
         </div>
         
         <div>

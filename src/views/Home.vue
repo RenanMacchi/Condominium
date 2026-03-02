@@ -8,8 +8,11 @@ import ListingCard from '../components/ListingCard.vue'
 import { useVisibilityRefetch } from '../composables/useVisibilityRefetch'
 
 import { useAuth } from '../composables/useAuth'
+import { settingsService } from '../services/settings'
 
 const auth = useAuth()
+
+const logoUrl = ref<string | null>(null)
 
 useVisibilityRefetch(() => {
   loadData()
@@ -91,6 +94,9 @@ function handleScroll() {
 onMounted(() => {
   window.addEventListener('scroll', handleScroll, { passive: true })
   loadData()
+  settingsService.getLogoUrl().then(url => {
+    logoUrl.value = url
+  })
 })
 
 onUnmounted(() => {
@@ -101,8 +107,9 @@ onUnmounted(() => {
 <template>
   <div class="bg-gray-50 min-h-full">
     <!-- Header / Branding -->
-    <div class="px-4 py-4 bg-white flex justify-between items-center text-center border-b border-gray-100">
-      <h1 class="text-2xl font-black text-green-600 tracking-tight w-full">Condomínio Store</h1>
+    <div class="px-4 py-4 bg-white flex justify-center items-center gap-3 border-b border-gray-100">
+      <img v-if="logoUrl" :src="logoUrl" alt="Logo" class="h-8 w-auto object-contain rounded" />
+      <h1 class="text-2xl font-black text-green-600 tracking-tight">Condomínio Store</h1>
     </div>
 
     <!-- Sticky Filters -->
@@ -114,7 +121,7 @@ onUnmounted(() => {
       <div class="px-2 pt-2 border-b border-gray-100 overflow-x-auto hide-scrollbar">
         <div class="flex pb-2 items-center">
           <RouterLink
-            v-if="auth.user.value"
+            v-if="auth.user.value && !auth.profile.value?.is_visitor"
             to="/me"
             class="flex-shrink-0 mr-2 px-4 py-1.5 text-sm font-extrabold text-white bg-green-600 rounded-full shadow-sm hover:bg-green-700 transition-colors whitespace-nowrap"
           >
