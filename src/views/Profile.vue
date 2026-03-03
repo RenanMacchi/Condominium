@@ -35,8 +35,28 @@ async function saveProfile() {
     // Sincroniza ele no banco de dados Auth User para que o "Recuperar de Senha" funcione
     // usando esse e-mail de verdade (já que o antigo casaX@local é inválido)
     if (recoveryEmail.value && recoveryEmail.value !== auth.user.value.email) {
-      const { error: authError } = await supabase.auth.updateUser({ email: recoveryEmail.value })
-      if (authError) throw authError
+      // Usando RPC customizada pois o Supabase bloqueia a troca simples se o email antigo (ex: .local)
+      // for considerado inválido na checagem de formato interno do Auth.
+      const { error: rpcError } = await supabase.rpc('update_user_email', {
+        new_email: recoveryEmail.value
+      })
+      if (rpcError) throw rpcError
+
+      // Como o email mudou "por baixo dos panos", o token de sessão local fica defasado (causando 403)
+      // Precisamos forçar o cliente a buscar um JWT novo com o novo email:
+      const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession()
+      
+      if (refreshError) {
+         // Se falhar o refresh por algum motivo, desloga para forçar um relogin limpo
+         await auth.signOut()
+         throw new Error("Sessão expirou durante a troca de email. Por favor, faça login novamente.")
+      }
+
+      if (refreshData?.user && auth.user.value) {
+        auth.user.value = refreshData.user
+      } else if (auth.user.value) {
+        auth.user.value.email = recoveryEmail.value
+      }
     }
 
     const { error: profileError } = await supabase
