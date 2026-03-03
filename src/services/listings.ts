@@ -78,7 +78,6 @@ export const listingsService = {
             .maybeSingle()
 
         if (error) {
-            console.error("Supabase Error on getListingById:", error)
             throw error
         }
         if (!data) throw new Error('PGRST116')
@@ -181,7 +180,6 @@ export const listingsService = {
                     .upload(fileName, file)
 
                 if (uploadError) {
-                    console.error('Error uploading photo:', uploadError)
                     continue
                 }
 
@@ -273,7 +271,6 @@ export const listingsService = {
                         .upload(fileName, file)
 
                     if (uploadError) {
-                        console.error('Error uploading new photo:', uploadError)
                         continue
                     }
 

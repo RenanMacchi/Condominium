@@ -24,6 +24,10 @@ const loading = ref(true)
 const cleaningDb = ref(false)
 
 const logoUrl = ref('')
+const logoFile = ref<File | null>(null)
+const logoPreviewUrl = ref('')
+const fileInputRef = ref<HTMLInputElement | null>(null)
+
 const savingLogo = ref(false)
 
 async function loadData() {
@@ -104,13 +108,40 @@ async function runAutoCleanup() {
   }
 }
 
+function handleLogoFileChange(event: Event) {
+  const target = event.target as HTMLInputElement
+  if (target.files && target.files.length > 0) {
+    const file = target.files[0]
+    if (file) {
+      logoFile.value = file
+      logoPreviewUrl.value = URL.createObjectURL(file)
+    }
+  }
+}
+
+function clearLogoSelection() {
+  logoFile.value = null
+  logoPreviewUrl.value = ''
+  if (fileInputRef.value) fileInputRef.value.value = ''
+}
+
 async function saveLogo() {
   savingLogo.value = true
   try {
-    await settingsService.updateLogoUrl(logoUrl.value)
+    let finalUrl = logoUrl.value
+    if (logoFile.value) {
+      toast.loading('Fazendo upload do logo...')
+      finalUrl = await settingsService.uploadLogo(logoFile.value)
+      logoUrl.value = finalUrl
+      toast.dismiss()
+    }
+    
+    await settingsService.updateLogoUrl(finalUrl)
+    clearLogoSelection()
     toast.success('Logo atualizado com sucesso!')
   } catch (e) {
     console.error(e)
+    toast.dismiss()
     toast.error('Erro ao salvar logo')
   } finally {
     savingLogo.value = false
@@ -160,22 +191,50 @@ onMounted(() => {
     <!-- Advanced Maintenance -->
     <div class="px-4 mb-4 space-y-3">
       <div class="bg-white border border-gray-300 shadow-sm rounded-xl p-4">
-        <label for="logo_url" class="block text-sm font-bold text-gray-900 mb-1">URL do Logo (Página Inicial)</label>
-        <p class="text-xs text-gray-500 mb-3">Cole uma URL de imagem direta para aparecer ao lado do título.</p>
-        <div class="flex gap-2">
-          <input 
-            id="logo_url"
-            v-model="logoUrl" 
-            placeholder="https://exemplo.com/logo.png" 
-            class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 outline-none text-sm" 
-          />
-          <button 
-            @click="saveLogo" 
-            :disabled="savingLogo"
-            class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg text-sm transition-colors disabled:opacity-70"
-          >
-            {{ savingLogo ? '...' : 'Salvar' }}
-          </button>
+        <label class="block text-sm font-bold text-gray-900 mb-1">Upload do Logo (Página Inicial)</label>
+        <p class="text-xs text-gray-500 mb-4">Escolha uma nova imagem para ser o logo do condomínio.</p>
+
+        <div class="flex flex-col gap-4">
+          <div v-if="logoUrl || logoPreviewUrl" class="h-20 w-40 border rounded bg-gray-50 flex items-center justify-center overflow-hidden">
+             <img :src="logoPreviewUrl || logoUrl" class="max-h-full max-w-full object-contain" />
+          </div>
+
+          <div class="flex items-center gap-3">
+            <input 
+              type="file" 
+              accept="image/*"
+              class="hidden" 
+              ref="fileInputRef"
+              @change="handleLogoFileChange"
+            />
+            <button 
+              @click="fileInputRef?.click()"
+              class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg text-sm transition-colors"
+            >
+              Escolher Imagem
+            </button>
+
+            <button 
+              v-if="logoFile"
+              @click="clearLogoSelection"
+              class="text-red-600 hover:text-red-800 text-sm font-bold"
+            >
+              Cancelar
+            </button>
+          </div>
+
+          <div class="flex items-center justify-between border-t pt-3 mt-1">
+            <span class="text-xs text-gray-500 truncate mr-3" :class="{'italic': !logoFile}">
+              {{ logoFile ? logoFile.name : 'Nenhum novo arquivo selecionado' }}
+            </span>
+            <button 
+              @click="saveLogo" 
+              :disabled="savingLogo || (!logoFile && !logoUrl)"
+              class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg text-sm transition-colors disabled:opacity-50"
+            >
+              {{ savingLogo ? 'Enviando...' : 'Salvar Logo' }}
+            </button>
+          </div>
         </div>
       </div>
 

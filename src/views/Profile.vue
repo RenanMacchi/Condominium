@@ -30,22 +30,29 @@ async function saveProfile() {
   saving.value = true
   msg.value = ''
   
-  const { error } = await supabase
-    .from('profiles')
-    .update({
-      display_name: displayName.value,
-      recovery_email: recoveryEmail.value,
-      whatsapp: whatsapp.value,
-      site: site.value,
-      house: house.value,
-    })
-    .eq('id', auth.user.value.id)
-    
-  if (error) {
-    msg.value = 'Erro ao salvar: ' + error.message
-  } else {
+  try {
+    // Se o e-mail de recuperação for diferente da conta primária de Autenticação atual,
+    // Sincroniza ele no banco de dados Auth User para que o "Recuperar de Senha" funcione
+    // usando esse e-mail de verdade (já que o antigo casaX@local é inválido)
+    if (recoveryEmail.value && recoveryEmail.value !== auth.user.value.email) {
+      const { error: authError } = await supabase.auth.updateUser({ email: recoveryEmail.value })
+      if (authError) throw authError
+    }
+
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .update({
+        display_name: displayName.value,
+        recovery_email: recoveryEmail.value,
+        whatsapp: whatsapp.value,
+        site: site.value,
+        house: house.value,
+      })
+      .eq('id', auth.user.value.id)
+
+    if (profileError) throw profileError
+
     msg.value = 'Perfil atualizado com sucesso!'
-    // update local state
     if (auth.profile.value) {
       auth.profile.value.display_name = displayName.value
       auth.profile.value.recovery_email = recoveryEmail.value
@@ -53,8 +60,37 @@ async function saveProfile() {
       auth.profile.value.site = site.value
       auth.profile.value.house = house.value
     }
+  } catch (err: any) {
+    msg.value = 'Erro ao salvar: ' + (err.message || 'Falha desconhecida')
+  } finally {
+    saving.value = false
   }
-  saving.value = false
+}
+
+const sendingReset = ref(false)
+const resetMsg = ref('')
+
+async function sendResetPassword() {
+  if (!recoveryEmail.value) {
+    resetMsg.value = 'Preencha o E-mail de Recuperação acima e salve primeiro.'
+    return
+  }
+  
+  sendingReset.value = true
+  resetMsg.value = ''
+  
+  try {
+    const { error } = await supabase.auth.resetPasswordForEmail(recoveryEmail.value, {
+      redirectTo: window.location.origin + '/reset-password',
+    })
+    
+    if (error) throw error
+    resetMsg.value = 'E-mail de redefinição enviado com sucesso! Verifique sua caixa de entrada.'
+  } catch (err: any) {
+    resetMsg.value = 'Erro: ' + (err.message || 'Falha ao processar solicitação')
+  } finally {
+    sendingReset.value = false
+  }
 }
 
 async function handleSignOut() {
@@ -115,6 +151,24 @@ async function handleSignOut() {
         <ShieldAlert class="w-5 h-5" />
         Painel de Moderação
       </router-link>
+
+      <!-- Seção do botão de troca de senha (separada visualmente por uma linha/container) -->
+      <div class="mt-8 pt-6 border-t border-gray-200">
+        <h2 class="text-sm font-bold text-gray-800 mb-2">Segurança</h2>
+        <div v-if="resetMsg" 
+             class="mb-3 p-3 text-sm rounded-lg" 
+             :class="resetMsg.includes('sucesso') ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'">
+          {{ resetMsg }}
+        </div>
+        <button 
+          type="button" 
+          @click="sendResetPassword"
+          :disabled="sendingReset"
+          class="w-full bg-white border border-gray-300 hover:bg-gray-50 text-gray-800 font-bold py-3 px-4 rounded-xl shadow-sm transition-colors active:scale-95 disabled:opacity-70 disabled:active:scale-100"
+        >
+          {{ sendingReset ? 'Enviando...' : 'Solicitar Troca de Senha / Enviar Email' }}
+        </button>
+      </div>
       
       <button 
         type="button" 

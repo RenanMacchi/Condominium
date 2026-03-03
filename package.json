@@ -9,13 +9,15 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.97.0",
+    "@supabase/supabase-js": "^2.98.0",
     "date-fns": "^4.1.0",
+    "dotenv": "^17.3.1",
     "lucide-vue-next": "^0.575.0",
     "pinia": "^3.0.4",
     "vue": "^3.5.25",
     "vue-router": "^5.0.3",
-    "vue-sonner": "^2.0.9"
+    "vue-sonner": "^2.0.9",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.2.1",
