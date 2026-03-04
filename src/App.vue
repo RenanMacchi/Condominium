@@ -3,10 +3,22 @@ import { RouterView, useRoute } from 'vue-router'
 import { useAuth } from './composables/useAuth'
 import BottomNavigation from './components/BottomNavigation.vue'
 import { Toaster } from 'vue-sonner'
-import 'vue-sonner/style.css'
+import { analyticsService } from './services/analytics'
+import { watch, onMounted } from 'vue'
 
-const auth = useAuth()
 const route = useRoute()
+const auth = useAuth()
+
+// Log access when the app is initialized
+onMounted(() => {
+  analyticsService.logAccess(auth.user.value?.id)
+})
+
+watch(() => auth.initialized.value, (isInit) => {
+  if (isInit) {
+    analyticsService.logAccess(auth.user.value?.id)
+  }
+})
 </script>
 
 <template>

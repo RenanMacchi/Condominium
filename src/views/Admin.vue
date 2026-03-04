@@ -4,10 +4,11 @@ import { useRouter } from 'vue-router'
 import { listingsService } from '../services/listings'
 import type { ListingWithOwner } from '../types'
 import { useAuth } from '../composables/useAuth'
-import { ShieldAlert, Trash2, CheckCircle, Users, ShoppingBag, CheckSquare, UserX, DatabaseZap } from 'lucide-vue-next'
+import { ShieldAlert, Trash2, CheckCircle, Users, ShoppingBag, CheckSquare, UserX, DatabaseZap, Search, Activity } from 'lucide-vue-next'
 import { useVisibilityRefetch } from '../composables/useVisibilityRefetch'
 import { toast } from 'vue-sonner'
 import { settingsService } from '../services/settings'
+import { analyticsService } from '../services/analytics'
 
 const router = useRouter()
 const auth = useAuth()
@@ -29,6 +30,12 @@ const logoPreviewUrl = ref('')
 const fileInputRef = ref<HTMLInputElement | null>(null)
 
 const savingLogo = ref(false)
+
+// Unique Access Analytics
+const accessStartDate = ref('')
+const accessEndDate = ref('')
+const uniqueAccesses = ref<number | null>(null)
+const loadingAccesses = ref(false)
 
 async function loadData() {
   loading.value = true
@@ -148,6 +155,25 @@ async function saveLogo() {
   }
 }
 
+async function fetchUniqueAccesses() {
+  if (!accessStartDate.value || !accessEndDate.value) {
+    toast.error('Por favor, defina a data de início e fim.')
+    return
+  }
+  loadingAccesses.value = true
+  try {
+    const start = new Date(accessStartDate.value).toISOString()
+    // analyticsService will adjust the end to the end of day
+    const count = await analyticsService.getUniqueAccesses(start, accessEndDate.value)
+    uniqueAccesses.value = count
+  } catch(e) {
+    console.error(e)
+    toast.error('Erro ao buscar acessos únicos')
+  } finally {
+    loadingAccesses.value = false
+  }
+}
+
 onMounted(() => {
   if (!auth.profile.value?.is_admin) {
     router.replace('/')
@@ -187,6 +213,39 @@ onMounted(() => {
           <span class="text-[10px] text-gray-500 font-bold uppercase tracking-wider mt-1">Visitantes</span>
        </div>
     </div>
+
+     <!-- Access Tracking Dashboard -->
+     <div class="px-4 mb-4">
+       <div class="bg-white border border-gray-300 shadow-sm rounded-xl p-4">
+         <div class="flex items-center gap-2 mb-3">
+            <Activity class="w-5 h-5 text-indigo-600" />
+            <h2 class="text-sm font-bold text-gray-900 leading-none">Acessos Únicos</h2>
+         </div>
+         <p class="text-xs text-gray-500 mb-4">Veja quantos usuários diferentes (inclusive visitantes) abriram o App em um período.</p>
+         
+         <div class="grid grid-cols-2 gap-3 mb-3">
+            <div>
+               <label class="block text-xs font-bold text-gray-700 mb-1">Data Início</label>
+               <input type="date" v-model="accessStartDate" class="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:ring-green-500 outline-none" />
+            </div>
+            <div>
+               <label class="block text-xs font-bold text-gray-700 mb-1">Data Fim</label>
+               <input type="date" v-model="accessEndDate" class="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:ring-green-500 outline-none" />
+            </div>
+         </div>
+         
+         <button @click="fetchUniqueAccesses" :disabled="loadingAccesses" class="w-full bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold py-2 rounded-lg text-sm transition-colors flex items-center justify-center gap-2">
+            <Search class="w-4 h-4" /> 
+            {{ loadingAccesses ? 'Buscando...' : 'Buscar Acessos' }}
+         </button>
+         
+         <div v-if="uniqueAccesses !== null" class="mt-4 pt-4 border-t border-gray-100 flex flex-col items-center">
+            <span class="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Resultado</span>
+            <div class="text-3xl font-black text-indigo-600 mt-1">{{ uniqueAccesses }}</div>
+            <span class="text-xs text-gray-500 font-medium">acessos na data filtrada</span>
+         </div>
+       </div>
+     </div>
 
     <!-- Advanced Maintenance -->
     <div class="px-4 mb-4 space-y-3">
