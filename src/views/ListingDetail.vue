@@ -122,6 +122,9 @@ const formattedPrice = computed(() => {
     const value = (listing.value.price_cents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
     return listing.value.pricing_type === 'POR_HORA' ? `${value}/h` : value
   }
+  if (listing.value.type === 'VENDA' && !listing.value.price_cents) {
+    return 'Preço sob consulta'
+  }
   if (listing.value.price_cents) {
     return (listing.value.price_cents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
   }
@@ -286,6 +289,21 @@ onMounted(() => {
               <span class="truncate" :title="listing.campaign_location">{{ listing.campaign_location }}</span>
               <a v-if="listing.campaign_location.startsWith('http')" :href="listing.campaign_location" target="_blank" class="underline flex-shrink-0 font-semibold hover:text-blue-800">(Ver no Mapa)</a>
            </div>
+        </div>
+
+        <!-- Extra Contacts -->
+        <div v-if="listing.extra_links?.length || listing.extra_whatsapps?.length" class="mb-8 mt-8 space-y-4">
+          <h3 class="text-xs font-bold text-gray-500 uppercase tracking-widest ml-1">Contatos Adicionais</h3>
+          <div class="flex flex-wrap gap-2">
+            <a v-for="(link, idx) in listing.extra_links" :key="'ex-link-'+idx" :href="link.startsWith('http') ? link : 'https://' + link" target="_blank" class="bg-blue-50 text-blue-700 hover:bg-blue-100 hover:text-blue-800 px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-2 transition-colors border border-blue-100">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
+              Link {{ idx + 1 }}
+            </a>
+            <a v-for="(wpp, idx) in listing.extra_whatsapps" :key="'ex-wpp-'+idx" :href="`https://wa.me/55${wpp.replace(/\D/g, '')}`" target="_blank" class="bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800 px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-2 transition-colors border border-green-100">
+              <MessageCircle class="w-4 h-4" />
+              {{ wpp }}
+            </a>
+          </div>
         </div>
 
         <!-- Vendor Info -->

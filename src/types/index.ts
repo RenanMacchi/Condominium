@@ -57,6 +57,8 @@ export interface Listing {
     business_days?: number[]
     open_time?: string
     close_time?: string
+    extra_links?: string[]
+    extra_whatsapps?: string[]
 }
 
 export interface ListingWithOwner extends Listing {
@@ -90,6 +92,8 @@ export interface CreateListingPayload {
     business_days?: number[]
     open_time?: string
     close_time?: string
+    extra_links?: string[]
+    extra_whatsapps?: string[]
 }
 
 export interface UpdateListingPayload extends Partial<CreateListingPayload> {

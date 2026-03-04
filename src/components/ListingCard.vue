@@ -15,6 +15,7 @@ const props = defineProps<{
 
 const formattedPrice = computed(() => {
   if (!props.listing.price_cents && props.listing.type === 'SERVICO' && props.listing.pricing_type !== 'A_COMBINAR') return 'Sob consulta'
+  if (!props.listing.price_cents && props.listing.type === 'VENDA') return 'Preço sob consulta'
   return formatPrice(props.listing)
 })
 

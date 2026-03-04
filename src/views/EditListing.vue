@@ -5,7 +5,7 @@ import { useAuth } from '../composables/useAuth'
 import { listingsService } from '../services/listings'
 import type { Category, ListingType, ListingStatus, ListingCondition, PricingType, UpdateListingPayload, ListingPhoto } from '../types'
 import { getStatusOptions } from '../utils/format'
-import { UploadCloud, X } from 'lucide-vue-next'
+import { UploadCloud, X, Plus, Trash2 } from 'lucide-vue-next'
 
 const router = useRouter()
 const route = useRoute()
@@ -25,6 +25,23 @@ const status = ref('ATIVO')
 const isDonationRequest = ref(false)
 const campaignLink = ref('')
 const campaignLocation = ref('')
+
+const extraLinks = ref<string[]>([])
+const extraWhatsapps = ref<string[]>([])
+
+function addExtraLink() {
+  extraLinks.value.push('')
+}
+function removeExtraLink(index: number) {
+  extraLinks.value.splice(index, 1)
+}
+
+function addExtraWhatsapp() {
+  extraWhatsapps.value.push('')
+}
+function removeExtraWhatsapp(index: number) {
+  extraWhatsapps.value.splice(index, 1)
+}
 
 // Horário de Atendimento
 const hasBusinessHours = ref(false)
@@ -116,11 +133,6 @@ async function handleSubmit() {
     }
   }
 
-  if (type.value === 'VENDA' && !price.value) {
-    errorMsg.value = 'Informe um preço para a venda'
-    return
-  }
-
   errorMsg.value = ''
   submitting.value = true
   
@@ -146,8 +158,11 @@ async function handleSubmit() {
       payload.condition = null
       payload.pricing_type = null
     } else if (type.value === 'VENDA') {
-      // transform "100.50" string or 100.5 number to cents safely
-      payload.price_cents = Math.round(parseFloat(String(price.value).replace(',', '.')) * 100)
+      if (price.value) {
+        payload.price_cents = Math.round(parseFloat(String(price.value).replace(',', '.')) * 100)
+      } else {
+        payload.price_cents = null
+      }
       payload.condition = condition.value as ListingCondition
       payload.pricing_type = null
     } else if (type.value === 'SERVICO') {
@@ -163,6 +178,9 @@ async function handleSubmit() {
       payload.condition = null
       payload.pricing_type = null
     }
+    
+    payload.extra_links = extraLinks.value.filter(link => link.trim() !== '')
+    payload.extra_whatsapps = extraWhatsapps.value.filter(wpp => wpp.trim() !== '')
     
     const updated = await listingsService.updateListing(
        listingId.value, 
@@ -218,6 +236,13 @@ async function loadListingData() {
     } else if (data.type === 'CAMPANHA') {
       campaignLink.value = data.campaign_link || ''
       campaignLocation.value = data.campaign_location || ''
+    }
+
+    if (data.extra_links) {
+      extraLinks.value = [...data.extra_links]
+    }
+    if (data.extra_whatsapps) {
+      extraWhatsapps.value = [...data.extra_whatsapps]
     }
 
     if (data.has_business_hours) {
@@ -345,7 +370,7 @@ onMounted(() => {
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Preço (R$)</label>
-          <input v-model="price" type="number" step="0.01" min="0" required placeholder="0.00" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 outline-none" />
+          <input v-model="price" type="number" step="0.01" min="0" placeholder="Opcional" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 outline-none" />
         </div>
       </div>
 
@@ -444,7 +469,7 @@ onMounted(() => {
 
       <!-- Specific Location -->
       <!-- Contact Options -->
-      <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 space-y-4">
         <label class="flex items-start gap-3 cursor-pointer">
           <div class="flex items-center h-5">
             <input 
@@ -458,6 +483,38 @@ onMounted(() => {
             <span class="text-xs text-gray-500">Se desmarcado, os usuários não verão seu Perfil ou WhatsApp neste anúncio.</span>
           </div>
         </label>
+
+        <div class="pt-4 border-t border-gray-100 space-y-4">
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <label class="block text-sm font-medium text-gray-700">Links Adicionais</label>
+              <button type="button" @click="addExtraLink" class="text-green-600 hover:bg-green-50 p-1 rounded-md transition-colors" title="Adicionar link">
+                <Plus class="w-4 h-4" />
+              </button>
+            </div>
+            <div v-for="(_link, idx) in extraLinks" :key="'link-'+idx" class="flex items-center gap-2 mb-2">
+              <input v-model="extraLinks[idx]" placeholder="https://" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 outline-none text-sm" />
+              <button type="button" @click="removeExtraLink(idx)" class="text-red-500 hover:bg-red-50 p-2 rounded-md transition-colors" title="Remover link">
+                <Trash2 class="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <label class="block text-sm font-medium text-gray-700">WhatsApp Adicionais</label>
+              <button type="button" @click="addExtraWhatsapp" class="text-green-600 hover:bg-green-50 p-1 rounded-md transition-colors" title="Adicionar WhatsApp">
+                <Plus class="w-4 h-4" />
+              </button>
+            </div>
+            <div v-for="(_wpp, idx) in extraWhatsapps" :key="'wpp-'+idx" class="flex items-center gap-2 mb-2">
+              <input v-model="extraWhatsapps[idx]" placeholder="Ex: 11999999999" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 outline-none text-sm" />
+              <button type="button" @click="removeExtraWhatsapp(idx)" class="text-red-500 hover:bg-red-50 p-2 rounded-md transition-colors" title="Remover WhatsApp">
+                <Trash2 class="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Photos -->

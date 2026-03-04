@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { supabase } from '../lib/supabaseClient'
 import { toast } from 'vue-sonner'
+import { Eye, EyeOff } from 'lucide-vue-next'
 
 const router = useRouter()
 const username = ref('')
@@ -11,6 +12,7 @@ const password = ref('')
 const loading = ref(false)
 const isSignUp = ref(false)
 const errorMsg = ref('')
+const showPassword = ref(false)
 
 async function handleSubmit() {
   loading.value = true
@@ -144,16 +146,26 @@ async function handleResetPassword() {
         
         <div>
           <label for="password_input" class="block text-sm font-medium text-gray-700 mb-1">Senha</label>
-          <input 
-            id="password_input"
-            name="password"
-            autocomplete="current-password"
-            v-model="password" 
-            type="password" 
-            required 
-            class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition"
-            placeholder="••••••••"
-          >
+          <div class="relative">
+            <input 
+              id="password_input"
+              name="password"
+              autocomplete="current-password"
+              v-model="password" 
+              :type="showPassword ? 'text' : 'password'" 
+              required 
+              class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition"
+              placeholder="••••••••"
+            >
+            <button 
+              type="button"
+              @click="showPassword = !showPassword"
+              class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+            >
+              <Eye v-if="!showPassword" class="w-5 h-5" />
+              <EyeOff v-else class="w-5 h-5" />
+            </button>
+          </div>
         </div>
         
           <button 
