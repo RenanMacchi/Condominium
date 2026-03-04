@@ -109,7 +109,7 @@ onUnmounted(() => {
     <!-- Header / Branding -->
     <div class="px-4 py-4 bg-white flex justify-center items-center gap-3 border-b border-gray-100">
       <img v-if="logoUrl" :src="logoUrl" alt="Logo" class="h-8 w-auto object-contain rounded" />
-      <h1 class="text-2xl font-black text-green-600 tracking-tight">Condomínio Store</h1>
+      <h1 class="text-2xl font-black text-green-600 tracking-tight">Viver Conecta</h1>
     </div>
 
     <!-- Sticky Filters -->
