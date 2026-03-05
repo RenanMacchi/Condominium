@@ -91,8 +91,10 @@ const sendingReset = ref(false)
 const resetMsg = ref('')
 
 async function sendResetPassword() {
-  if (!recoveryEmail.value) {
-    resetMsg.value = 'Preencha o E-mail de Recuperação acima e salve primeiro.'
+  const savedEmail = auth.profile.value?.recovery_email;
+  
+  if (!savedEmail || savedEmail !== recoveryEmail.value) {
+    resetMsg.value = 'Por favor, salve as alterações do seu e-mail de recuperação primeiro.'
     return
   }
   
@@ -100,7 +102,7 @@ async function sendResetPassword() {
   resetMsg.value = ''
   
   try {
-    const { error } = await supabase.auth.resetPasswordForEmail(recoveryEmail.value, {
+    const { error } = await supabase.auth.resetPasswordForEmail(savedEmail, {
       redirectTo: window.location.origin + '/reset-password',
     })
     
@@ -173,7 +175,7 @@ async function handleSignOut() {
       </router-link>
 
       <!-- Seção do botão de troca de senha (separada visualmente por uma linha/container) -->
-      <div class="mt-8 pt-6 border-t border-gray-200">
+      <div v-if="auth.profile.value?.recovery_email && auth.profile.value?.recovery_email === recoveryEmail" class="mt-8 pt-6 border-t border-gray-200">
         <h2 class="text-sm font-bold text-gray-800 mb-2">Segurança</h2>
         <div v-if="resetMsg" 
              class="mb-3 p-3 text-sm rounded-lg" 
