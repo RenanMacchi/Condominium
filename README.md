@@ -1,5 +1,22 @@
-# Vue 3 + TypeScript + Vite
+Condominium é uma plataforma web para gestão condominial desenvolvida com Vue 3, TypeScript e Supabase. O sistema centraliza o gerenciamento de moradores, unidades habitacionais, informações cadastrais e processos administrativos, oferecendo uma interface moderna, intuitiva e acessível para síndicos, administradoras e equipes de gestão.
 
-This template should help get you started developing with Vue 3 and TypeScript in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+O projeto foi concebido para digitalizar rotinas operacionais de condomínios, reduzindo processos manuais e facilitando o acesso às informações por meio de uma aplicação web responsiva e integrada à nuvem.
 
-Learn more about the recommended Project Setup and IDE Support in the [Vue Docs TypeScript Guide](https://vuejs.org/guide/typescript/overview.html#project-setup).
+Principais objetivos:
+
+-Centralizar informações de moradores e unidades;
+-Simplificar processos administrativos e operacionais;
+-Melhorar a comunicação e a organização do condomínio;
+-Garantir segurança e controle de acesso aos dados;
+-Disponibilizar uma experiência moderna através de tecnologias web atuais.
+
+Tecnologias:
+
+-Vue 3;
+-TypeScript;
+-Vite;
+-Supabase;
+-Tailwind CSS;
+-Visão Geral.
+
+O Condominium busca ser uma solução completa para administração condominial, oferecendo uma base sólida para evolução contínua de funcionalidades relacionadas à gestão de moradores, documentos, comunicação interna e controle operacional.
